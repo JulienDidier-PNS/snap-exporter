@@ -2,10 +2,12 @@ version: "3.9"
 
 services:
   web:
-    container_name: snap-overlay-web
+    container_name: snap-web
+    image: snap-overlay-dev
     build:
       context: ./front
       dockerfile: Dockerfile
+      target: deps
     ports:
       - "3000:3000"
     volumes:
@@ -13,4 +15,5 @@ services:
       - /app/node_modules
     environment:
       NODE_ENV: development
+      WATCHPACK_POLLING: "true"
     command: npm run dev
