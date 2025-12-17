@@ -2,3 +2,13 @@
 node_modules/
 
 .idea/
+
+backend/__pycache__/
+
+backend/bin/
+
+backend/build/
+
+backend/.DS_Store
+
+backend/server.spec
