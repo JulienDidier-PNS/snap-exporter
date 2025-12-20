@@ -16,6 +16,9 @@ OUTPUT = BASE_DIR / "downloads"
 UPLOADS.mkdir(parents=True, exist_ok=True)
 OUTPUT.mkdir(parents=True, exist_ok=True)
 
+progress = {"downloaded": 0, "total": 0}
+
+
 @app.post("/run")
 async def run(
     file: UploadFile = File(...),
@@ -37,6 +40,10 @@ async def run(
     )
 
     return {"status": "done"}
+
+@app.get("/progress")
+def get_progress():
+    return progress
 
 # --- ENTRY POINT ---
 if __name__ == "__main__":

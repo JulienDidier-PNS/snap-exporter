@@ -1,34 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
-export default function UploadPage() {
-    const [zipName, setZipName] = useState<string | null>(null);
+export default function UploadForm() {
+    const [status, setStatus] = useState("");
 
-    function handleZipUpload(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleUpload = async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
 
-        if (file.type !== "application/zip") {
-            alert("Merci de sélectionner un fichier ZIP");
-            return;
-        }
+        setStatus("Uploading...");
 
-        setZipName(file.name);
-        console.log("ZIP sélectionné :", file);
-    }
+        const res = await fetch("http://127.0.0.1:8000/run", {
+            method: "POST",
+            body: formData,
+        });
+
+        const data = await res.json();
+        setStatus(data.status);
+    };
+
+    setInterval(async () => {
+        const res = await fetch("http://127.0.0.1:8000/progress");
+        const data = await res.json();
+        console.log("Progress:", data);
+    }, 1000);
+
 
     return (
-        <main style={{ padding: 40 }}>
-            <h1>Importer un ZIP Snapchat</h1>
-
+        <div className="p-4">
             <input
                 type="file"
-                accept=".zip"
-                onChange={handleZipUpload}
+                accept=".json"
+                onChange={(e) => e.target.files && handleUpload(e.target.files[0])}
             />
-
-            {zipName && <p>Fichier chargé : {zipName}</p>}
-        </main>
+            <p>Status: {status}</p>
+        </div>
     );
 }

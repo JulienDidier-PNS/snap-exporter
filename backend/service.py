@@ -20,6 +20,8 @@ from pydantic import BaseModel, Field, field_validator
 from tqdm.asyncio import tqdm
 from tzlocal import get_localzone
 
+progress = {"downloaded": 0, "total": 0}
+
 
 def get_ffmpeg_path():
     if getattr(sys, "frozen", False):
@@ -338,6 +340,10 @@ async def download_all(
     if not to_download:
         print("All files already downloaded!")
         return
+
+    progress["total"] = len(to_download)
+    progress["downloaded"] = stats.downloaded
+
 
     progress_bar = tqdm(
         total=len(to_download),
