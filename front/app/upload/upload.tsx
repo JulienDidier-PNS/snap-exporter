@@ -4,11 +4,13 @@ import {useRef, useState} from "react";
 
 export interface progressDTO {
     status: string;
-    downloaded: string;
-    total: string;
+    downloaded: number;
+    total: number;
 }
 export default function UploadForm() {
     const [status, setStatus] = useState("Not started");
+    const [downloaded, setDownloaded] = useState(0);
+    const [total, setTotal] = useState(0);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleUpload = async (file: File) => {
@@ -24,11 +26,13 @@ export default function UploadForm() {
 
         const data = await res.json();
         setStatus(data.status);
+        setTotal(data.total);
 
         setInterval(async () => {
             const res = await fetch("http://127.0.0.1:8000/progress");
             const data: progressDTO = await res.json();
             console.log("Progress:", data);
+            setDownloaded(data.downloaded);
         }, 1000);
     };
 
@@ -55,7 +59,7 @@ export default function UploadForm() {
                 Upload JSON
             </button>
 
-            <p>Status: {status}</p>
+            <p>Status: {status} / Memories traités : {downloaded} / {total}</p>
         </div>
     );
 }

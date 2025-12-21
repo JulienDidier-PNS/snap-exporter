@@ -358,6 +358,7 @@ async def download_all(
         )
         if success:
             stats.downloaded += 1
+            progress["downloaded"]+=1
         else:
             stats.failed += 1
         stats.mb += bytes_downloaded / 1024 / 1024
@@ -379,7 +380,6 @@ async def download_all(
     )
 
 def get_progress():
-    print("service : progress")
     return progress
 
 async def run_import(
