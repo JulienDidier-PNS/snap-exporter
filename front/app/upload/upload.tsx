@@ -8,7 +8,7 @@ export interface progressDTO {
     total: number;
 }
 export default function UploadForm() {
-    const [status, setStatus] = useState("Not started");
+    const [status, setStatus] = useState("En attente d'import");
     const [downloaded, setDownloaded] = useState(0);
     const [total, setTotal] = useState(0);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -17,28 +17,48 @@ export default function UploadForm() {
         const formData = new FormData();
         formData.append("file", file);
 
-        setStatus("Uploading...");
-
         const res = await fetch("http://127.0.0.1:8000/run", {
             method: "POST",
             body: formData,
         });
 
-        const data = await res.json();
-        setStatus(data.status);
-        setTotal(data.total);
+        try{
+            //backend down
+            if(!res.ok){
+                throw new Error(res.statusText);
+            }
+            const data = await res.json();
+            setStatus(data.status);
+            setTotal(data.total);
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch("http://127.0.0.1:8000/progress");
 
-        setInterval(async () => {
-            const res = await fetch("http://127.0.0.1:8000/progress");
-            const data: progressDTO = await res.json();
-            console.log("Progress:", data);
-            setDownloaded(data.downloaded);
-        }, 1000);
+                    if (!res.ok) {
+                        throw new Error("Progress API error");
+                    }
+
+                    const data: progressDTO = await res.json();
+                    setDownloaded(data.downloaded);
+
+                    if (data.status === "done") {
+                        clearInterval(interval);
+                    }
+                } catch (err) {
+                    console.error("Progress not available yet");
+                }
+            }, 1000);
+        }
+        catch (error) {
+            console.error(error);
+        }
+
+
     };
 
 
     return (
-        <div className="p-4">
+        <div className="p-4 flex flex-col content-center gap-5">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -56,10 +76,13 @@ export default function UploadForm() {
                 onClick={() => fileInputRef.current?.click()}
                 className="px-4 py-2 bg-blue-500 text-white rounded"
             >
-                Upload JSON
+                Commencer l'import (.json)
             </button>
 
-            <p>Status: {status} / Memories traités : {downloaded} / {total}</p>
+            <p>Status: {status}</p>
+            {total > 0 && (
+                <p>Memories traités : {downloaded} / {total}</p>
+            )}
         </div>
     );
 }
