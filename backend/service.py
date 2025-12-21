@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, field_validator
 from tqdm.asyncio import tqdm
 from tzlocal import get_localzone
 
-progress = {"downloaded": 0, "total": 0}
+progress = {"status": "not_started","downloaded": 0, "total": 0}
 
 
 def get_ffmpeg_path():
@@ -374,9 +374,13 @@ async def download_all(
     mb_total = stats.mb
     mb_per_sec = mb_total / elapsed if elapsed > 0 else 0
     print(
-        f"\n{'='*50}\nDownloaded: {stats.downloaded} ({mb_total:.1f} MB @ {mb_per_sec:.2f} MB/s) | "
+        f"\n{'='*50}\nDownloaded: {stats.downloaded} ({mb_total:.1f} MB © {mb_per_sec:.2f} MB/s) | "
         f"Skipped: {stats.skipped} | Failed: {stats.failed}\n{'='*50}"
     )
+
+def get_progress():
+    print("service : progress")
+    return progress
 
 async def run_import(
     json_path: Path,

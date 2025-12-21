@@ -1,9 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import {useRef, useState} from "react";
 
+export interface progressDTO {
+    status: string;
+    downloaded: string;
+    total: string;
+}
 export default function UploadForm() {
-    const [status, setStatus] = useState("");
+    const [status, setStatus] = useState("Not started");
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleUpload = async (file: File) => {
         const formData = new FormData();
@@ -18,22 +24,37 @@ export default function UploadForm() {
 
         const data = await res.json();
         setStatus(data.status);
-    };
 
-    setInterval(async () => {
-        const res = await fetch("http://127.0.0.1:8000/progress");
-        const data = await res.json();
-        console.log("Progress:", data);
-    }, 1000);
+        setInterval(async () => {
+            const res = await fetch("http://127.0.0.1:8000/progress");
+            const data: progressDTO = await res.json();
+            console.log("Progress:", data);
+        }, 1000);
+    };
 
 
     return (
         <div className="p-4">
             <input
+                ref={fileInputRef}
                 type="file"
                 accept=".json"
-                onChange={(e) => e.target.files && handleUpload(e.target.files[0])}
+                className="hidden"
+                onChange={(e) => {
+                    if (e.target.files) {
+                        handleUpload(e.target.files[0]).then();
+                        e.target.value = ""; // reset
+                    }
+                }}
             />
+
+            <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+            >
+                Upload JSON
+            </button>
+
             <p>Status: {status}</p>
         </div>
     );

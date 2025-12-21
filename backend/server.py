@@ -1,11 +1,12 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import shutil
 import asyncio
 import sys
 import logging
 
-from service import run_import
+from service import run_import, get_progress as service_get_progress
 
 app = FastAPI()
 
@@ -16,7 +17,13 @@ OUTPUT = BASE_DIR / "downloads"
 UPLOADS.mkdir(parents=True, exist_ok=True)
 OUTPUT.mkdir(parents=True, exist_ok=True)
 
-progress = {"downloaded": 0, "total": 0}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/run")
@@ -31,19 +38,22 @@ async def run(
     with open(json_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    await run_import(
-        json_path=json_path,
-        output_dir=OUTPUT,
-        concurrent=concurrent,
-        add_exif=add_exif,
-        skip_existing=skip_existing,
+    asyncio.create_task(
+        run_import(
+            json_path=json_path,
+            output_dir=OUTPUT,
+            concurrent=concurrent,
+            add_exif=add_exif,
+            skip_existing=skip_existing,
+        )
     )
 
-    return {"status": "done"}
+    return {"status": "started"}
 
 @app.get("/progress")
-def get_progress():
-    return progress
+def progress():
+    return service_get_progress()
+
 
 # --- ENTRY POINT ---
 if __name__ == "__main__":

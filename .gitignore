@@ -12,3 +12,7 @@ backend/build/
 backend/.DS_Store
 
 backend/server.spec
+
+.DS_Store
+
+front/package-lock.json
