@@ -20,8 +20,10 @@ from pydantic import BaseModel, Field, field_validator
 from tqdm.asyncio import tqdm
 from tzlocal import get_localzone
 
-progress = {"status": "not_started","downloaded": 0, "total": 0}
+progress = {"status": "idle","downloaded": 0, "total": 0}
 
+pause_event = asyncio.Event()
+pause_event.set()  #Default -> allowed
 
 def get_ffmpeg_path():
     if getattr(sys, "frozen", False):
@@ -31,7 +33,6 @@ def get_ffmpeg_path():
 
     exe = "ffmpeg.exe" if os.name == "nt" else "ffmpeg"
     return base / "bin" / exe
-
 
 class Memory(BaseModel):
     date: datetime = Field(alias="Date")
@@ -65,13 +66,11 @@ class Memory(BaseModel):
         ext = ".jpg" if self.media_type.lower() == "image" else ".mp4"
         return f"{self.date.strftime('%Y-%m-%d_%H-%M-%S')}{ext}"
 
-
 class Stats(BaseModel):
     downloaded: int = 0
     skipped: int = 0
     failed: int = 0
     mb: float = 0
-
 
 def load_memories(json_path: Path) -> list[Memory]:
     with open(json_path, "r", encoding="utf-8") as f:
@@ -200,6 +199,7 @@ async def download_memory(
     memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore
 ) -> tuple[bool, int]:
     async with semaphore:
+        await pause_event.wait()  # ⏸️ attend si pause activée
         try:
             url = memory.download_link
             output_path = output_dir / memory.filename
@@ -324,14 +324,13 @@ async def download_all(
     add_exif: bool,
     skip_existing: bool,
 ):
-    output_dir.mkdir(parents=True, exist_ok=True)
     semaphore = asyncio.Semaphore(max_concurrent)
     stats = Stats()
     start_time = time.time()
 
     to_download = []
     for memory in memories:
-        output_path = output_dir / memory.filename
+        output_path = output_dir / "download" / memory.filename
         if skip_existing and output_path.exists():
             stats.skipped += 1
         else:
@@ -341,9 +340,9 @@ async def download_all(
         print("All files already downloaded!")
         return
 
+    progress["status"]="running"
     progress["total"] = len(to_download)
     progress["downloaded"] = stats.downloaded
-
 
     progress_bar = tqdm(
         total=len(to_download),
@@ -378,6 +377,9 @@ async def download_all(
         f"\n{'='*50}\nDownloaded: {stats.downloaded} ({mb_total:.1f} MB © {mb_per_sec:.2f} MB/s) | "
         f"Skipped: {stats.skipped} | Failed: {stats.failed}\n{'='*50}"
     )
+
+    progress["status"]="done"
+    return
 
 def get_progress():
     return progress

@@ -1,64 +1,83 @@
 "use client";
 
-import {useRef, useState} from "react";
+import { useRef, useState } from "react";
 
 export interface progressDTO {
     status: string;
     downloaded: number;
     total: number;
 }
+
 export default function UploadForm() {
-    const [status, setStatus] = useState("En attente d'import");
+    const [status, setStatus] = useState("idle");
     const [downloaded, setDownloaded] = useState(0);
     const [total, setTotal] = useState(0);
+
+    const [outputPath, setOutputPath] = useState("");
+
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const startPolling = () => {
+        if (intervalRef.current) return;
+
+        intervalRef.current = setInterval(async () => {
+            try {
+                const res = await fetch("http://127.0.0.1:8000/progress");
+                const data: progressDTO = await res.json();
+
+                if(data.status === "paused" && downloaded === data.total){
+                    return;
+                }
+
+                setDownloaded(data.downloaded);
+                setTotal(data.total);
+                setStatus(data.status);
+
+                if (data.status === "done") {
+                    clearInterval(intervalRef.current!);
+                    intervalRef.current = null;
+                }
+            } catch (e) {
+                console.error("Progress error", e);
+            }
+        }, 1000);
+    };
 
     const handleUpload = async (file: File) => {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("output_path", outputPath);
 
-        const res = await fetch("http://127.0.0.1:8000/run", {
+        await fetch("http://127.0.0.1:8000/run", {
             method: "POST",
             body: formData,
         });
 
-        try{
-            //backend down
-            if(!res.ok){
-                throw new Error(res.statusText);
-            }
-            const data = await res.json();
-            setStatus(data.status);
-            setTotal(data.total);
-            const interval = setInterval(async () => {
-                try {
-                    const res = await fetch("http://127.0.0.1:8000/progress");
-
-                    if (!res.ok) {
-                        throw new Error("Progress API error");
-                    }
-
-                    const data: progressDTO = await res.json();
-                    setDownloaded(data.downloaded);
-
-                    if (data.status === "done") {
-                        clearInterval(interval);
-                    }
-                } catch (err) {
-                    console.error("Progress not available yet");
-                }
-            }, 1000);
-        }
-        catch (error) {
-            console.error(error);
-        }
-
-
+        setStatus("running");
+        startPolling();
     };
 
+    const pause = async () => {
+        await fetch("http://127.0.0.1:8000/pause", { method: "POST" });
+        setStatus("paused");
+    };
+
+    const resume = async () => {
+        await fetch("http://127.0.0.1:8000/resume", { method: "POST" });
+        setStatus("running");
+    };
 
     return (
-        <div className="p-4 flex flex-col content-center gap-5">
+        <div className="p-4 flex flex-col gap-4">
+            <input
+                type="text"
+                placeholder="Chemin de sortie (ex: ~/Pictures/Snapchat)"
+                value={outputPath}
+                onChange={(e) => setOutputPath(e.target.value)}
+                className="border px-2 py-1 rounded"
+            />
+
             <input
                 ref={fileInputRef}
                 type="file"
@@ -66,8 +85,8 @@ export default function UploadForm() {
                 className="hidden"
                 onChange={(e) => {
                     if (e.target.files) {
-                        handleUpload(e.target.files[0]).then();
-                        e.target.value = ""; // reset
+                        handleUpload(e.target.files[0]);
+                        e.target.value = "";
                     }
                 }}
             />
@@ -79,10 +98,26 @@ export default function UploadForm() {
                 Commencer l'import (.json)
             </button>
 
+            <div className="flex gap-2">
+                <button
+                    onClick={pause}
+                    disabled={status !== "running"}
+                    className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+                >
+                    Pause
+                </button>
+
+                <button
+                    onClick={resume}
+                    disabled={status !== "paused"}
+                    className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+                >
+                    Resume
+                </button>
+            </div>
+
             <p>Status: {status}</p>
-            {total > 0 && (
-                <p>Memories traités : {downloaded} / {total}</p>
-            )}
+            <p>Memories traités : {downloaded} / {total}</p>
         </div>
     );
 }
