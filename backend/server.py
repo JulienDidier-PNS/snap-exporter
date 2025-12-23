@@ -1,18 +1,24 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+
 from pathlib import Path
 import shutil
 import asyncio
 import logging
 
-from service import run_import, get_progress as service_get_progress, pause_event
+from service import run_import, get_progress as service_get_progress, pause_event, downloaded_items, downloaded_items_lock
 
 app = FastAPI()
 
 # Middleware CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,6 +106,13 @@ def resume():
     progress = service_get_progress()
     progress["status"] = "running"
     return {"status": "running"}
+
+@app.get("/downloads")
+async def get_downloaded_items():
+    async with downloaded_items_lock:
+        return list(downloaded_items)
+
+
 
 # --- ENTRY POINT ---
 if __name__ == "__main__":

@@ -9,9 +9,11 @@ function createWindow() {
             preload: path.join(__dirname, "preload.js"),
             contextIsolation: true,
             nodeIntegration: false,
+            devTools: true,
+            webSecurity: false
         },
     });
-
+    win.webContents.openDevTools()
     win.loadURL("http://localhost:3000");
 }
 

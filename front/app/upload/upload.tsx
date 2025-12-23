@@ -8,6 +8,13 @@ export interface progressDTO {
     total: number;
 }
 
+export interface DownloadedItemDTO {
+    filename: string;
+    date: string;
+    media_type: string;
+}
+
+
 declare global {
     interface Window {
         electron?: {
@@ -24,11 +31,12 @@ export default function UploadForm() {
 
     const [outputPath, setOutputPath] = useState("");
 
+    const [downloadedItems, setDownloadedItems] = useState<DownloadedItemDTO[]>([]);
+
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const pickFolder = async () => {
-        console.log("pickFolder");
         if (!window.electron) return;
 
         const folder = await window.electron.selectFolder();
@@ -46,7 +54,6 @@ export default function UploadForm() {
                 const res = await fetch("http://127.0.0.1:8000/progress");
                 const data: progressDTO = await res.json();
 
-                //TODO: DON'T PULL PROGRESS IF STATUS = PAUSED
                 if(data.status === "paused"){
                     return;
                 }
@@ -59,6 +66,12 @@ export default function UploadForm() {
                     clearInterval(intervalRef.current!);
                     intervalRef.current = null;
                 }
+
+                const resDownloads = await fetch("http://127.0.0.1:8000/downloads");
+                const items: DownloadedItemDTO[] = await resDownloads.json();
+                console.log("downloaded items :", items);
+                setDownloadedItems(items);
+
             } catch (e) {
                 console.error("Progress error", e);
             }
@@ -139,6 +152,19 @@ export default function UploadForm() {
 
             <p>Status: {status}</p>
             <p>Memories traités : {downloaded} / {total}</p>
+
+            <div>
+                <ul className="text-sm">
+                    {downloadedItems.map((item, i) => (
+                        <li key={i}>
+                            {item.media_type === "image" ? "🖼️" : "🎬"}{" "}
+                            {item.filename} —{" "}
+                            {new Date(item.date).toLocaleString()}
+                        </li>
+                    ))}
+                </ul>
+
+            </div>
         </div>
     );
 }

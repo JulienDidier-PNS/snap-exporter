@@ -19,8 +19,19 @@ import httpx
 from pydantic import BaseModel, Field, field_validator
 from tqdm.asyncio import tqdm
 from tzlocal import get_localzone
+from datetime import datetime
+from asyncio import Lock
 
 progress = {"status": "idle","downloaded": 0, "total": 0}
+
+# DOWNLOADED ITEM HISTORY
+class DownloadedItem(BaseModel):
+    filename: str
+    date: datetime
+    media_type: str
+
+downloaded_items_lock = Lock()
+downloaded_items: list[DownloadedItem] = []
 
 pause_event = asyncio.Event()
 pause_event.set()  #Default -> allowed
@@ -310,7 +321,15 @@ async def download_memory(
                     elif memory.media_type.lower() == "video":
                         set_video_metadata(output_path, memory)
 
-                # ✅ Always return success + byte count
+                with downloaded_items_lock:
+                    downloaded_items.append(
+                        DownloadedItem(
+                            filename=output_path.name,
+                            date=memory.date,
+                            media_type=memory.media_type.lower(),
+                        )
+                    )
+
                 return True, bytes_downloaded
 
         except Exception as e:
@@ -330,7 +349,7 @@ async def download_all(
 
     to_download = []
     for memory in memories:
-        output_path = output_dir / "download" / memory.filename
+        output_path = output_dir / memory.filename
         if skip_existing and output_path.exists():
             stats.skipped += 1
         else:
@@ -392,6 +411,11 @@ async def run_import(
     skip_existing: bool = True,
 ):
     memories = load_memories(json_path)
+
+    global downloaded_items
+    async with downloaded_items_lock:
+        downloaded_items = []
+
 
     await download_all(
         memories=memories,
