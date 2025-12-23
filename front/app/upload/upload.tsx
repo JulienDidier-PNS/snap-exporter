@@ -8,6 +8,15 @@ export interface progressDTO {
     total: number;
 }
 
+declare global {
+    interface Window {
+        electron?: {
+            selectFolder: () => Promise<string | null>;
+        };
+    }
+}
+
+
 export default function UploadForm() {
     const [status, setStatus] = useState("idle");
     const [downloaded, setDownloaded] = useState(0);
@@ -18,6 +27,17 @@ export default function UploadForm() {
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+    const pickFolder = async () => {
+        console.log("pickFolder");
+        if (!window.electron) return;
+
+        const folder = await window.electron.selectFolder();
+        if (folder) {
+            setOutputPath(folder);
+        }
+    };
+
+
     const startPolling = () => {
         if (intervalRef.current) return;
 
@@ -26,7 +46,8 @@ export default function UploadForm() {
                 const res = await fetch("http://127.0.0.1:8000/progress");
                 const data: progressDTO = await res.json();
 
-                if(data.status === "paused" && downloaded === data.total){
+                //TODO: DON'T PULL PROGRESS IF STATUS = PAUSED
+                if(data.status === "paused"){
                     return;
                 }
 
@@ -70,13 +91,13 @@ export default function UploadForm() {
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            <input
-                type="text"
-                placeholder="Chemin de sortie (ex: ~/Pictures/Snapchat)"
-                value={outputPath}
-                onChange={(e) => setOutputPath(e.target.value)}
-                className="border px-2 py-1 rounded"
-            />
+            <button
+                onClick={pickFolder}
+                className="px-4 py-2 bg-gray-700 text-white rounded"
+            >
+                Choisir un dossier
+            </button>
+            <p>Dossier de sortie : {outputPath}</p>
 
             <input
                 ref={fileInputRef}
