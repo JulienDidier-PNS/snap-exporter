@@ -30,9 +30,6 @@ class DownloadedItem(BaseModel):
     date: datetime
     media_type: str
 
-downloaded_items_lock = Lock()
-downloaded_items: list[DownloadedItem] = []
-
 pause_event = asyncio.Event()
 pause_event.set()  #Default -> allowed
 
@@ -207,7 +204,7 @@ def detect_image_ext(data: bytes) -> str:
     return ".bin"
 
 async def download_memory(
-    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore
+    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore, state: FastAPI.state = None
 ) -> tuple[bool, int]:
     async with semaphore:
         await pause_event.wait()  # ⏸️ attend si pause activée
@@ -291,10 +288,8 @@ async def download_memory(
 
                                     except subprocess.CalledProcessError as e:
                                         print("Error during ffmepg process -> Bad overlay normalization")
-                                        print(e.stderr)
                                         print("Saving main file only...")
                                         output_path.write_bytes(main_data)
-
 
                                 else:
                                     # No overlay file
@@ -321,14 +316,17 @@ async def download_memory(
                     elif memory.media_type.lower() == "video":
                         set_video_metadata(output_path, memory)
 
-                with downloaded_items_lock:
-                    downloaded_items.append(
+
+                async with state.downloaded_items_lock:
+                    state.downloaded_items.append(
                         DownloadedItem(
                             filename=output_path.name,
                             date=memory.date,
                             media_type=memory.media_type.lower(),
                         )
                     )
+
+
 
                 return True, bytes_downloaded
 
@@ -342,6 +340,7 @@ async def download_all(
     max_concurrent: int,
     add_exif: bool,
     skip_existing: bool,
+    state: FastAPI.state = None,
 ):
     semaphore = asyncio.Semaphore(max_concurrent)
     stats = Stats()
@@ -372,8 +371,13 @@ async def download_all(
 
     async def process_and_update(memory):
         success, bytes_downloaded = await download_memory(
-            memory, output_dir, add_exif, semaphore
-        )
+                                                            memory,
+                                                            output_dir,
+                                                            add_exif,
+                                                            semaphore,
+                                                            state,
+                                                        )
+
         if success:
             stats.downloaded += 1
             progress["downloaded"]+=1
@@ -409,12 +413,16 @@ async def run_import(
     concurrent: int = 40,
     add_exif: bool = True,
     skip_existing: bool = True,
+    state: FastAPI.state = None,
 ):
+    print("STATE downloaded_items id =", id(state.downloaded_items))
+
     memories = load_memories(json_path)
 
     global downloaded_items
-    async with downloaded_items_lock:
-        downloaded_items = []
+    async with state.downloaded_items_lock:
+        state.downloaded_items.clear()
+
 
 
     await download_all(
@@ -423,4 +431,5 @@ async def run_import(
         max_concurrent=concurrent,
         add_exif=add_exif,
         skip_existing=skip_existing,
+        state=state,
     )

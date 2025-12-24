@@ -7,7 +7,7 @@ import shutil
 import asyncio
 import logging
 
-from service import run_import, get_progress as service_get_progress, pause_event, downloaded_items, downloaded_items_lock
+from service import run_import, get_progress as service_get_progress, pause_event
 
 app = FastAPI()
 
@@ -23,6 +23,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def startup():
+    app.state.downloaded_items = []
+    app.state.downloaded_items_lock = asyncio.Lock()
+
 
 # --- Setup dossiers ---
 def setup_directories(output_path: str | None = None):
@@ -69,8 +75,6 @@ async def run(
             raise HTTPException(status_code=400, detail="Invalid output directory")
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("output dir:", output_dir)
-
     pause_event.set()  # lancement possible si pause
 
     # Lancer le téléchargement en tâche asynchrone
@@ -81,6 +85,7 @@ async def run(
             concurrent=concurrent,
             add_exif=add_exif,
             skip_existing=skip_existing,
+            state=app.state,
         )
     )
 
@@ -109,8 +114,9 @@ def resume():
 
 @app.get("/downloads")
 async def get_downloaded_items():
-    async with downloaded_items_lock:
+    async with app.state.downloaded_items_lock:
         return list(downloaded_items)
+        return jsonable_encoder(app.state.downloaded_items)
 
 
 
