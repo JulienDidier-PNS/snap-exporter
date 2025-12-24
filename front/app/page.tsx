@@ -1,5 +1,6 @@
 import Image from "next/image";
 import UploadForm from "@/app/upload/upload";
+import DownloadHistory from "@/app/upload/downloadHistory";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
           priority
         />
           <UploadForm></UploadForm>
+          <DownloadHistory></DownloadHistory>
       </main>
     </div>
   );

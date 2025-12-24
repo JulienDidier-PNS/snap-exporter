@@ -1,6 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
+
+from pydantic import BaseModel
 
 from pathlib import Path
 import shutil
@@ -9,7 +11,22 @@ import logging
 
 from service import run_import, get_progress as service_get_progress, pause_event
 
+from typing import List
+from datetime import datetime
+
 app = FastAPI()
+
+#pPAGINATION FOR DOWNLOADED ITEMS
+class DownloadedItemDTO(BaseModel):
+    filename: str
+    date: datetime
+    media_type: str
+class DownloadedItemsPage(BaseModel):
+    items: List[DownloadedItemDTO]
+    total: int
+    offset: int
+    limit: int
+
 
 # Middleware CORS
 app.add_middleware(
@@ -112,11 +129,21 @@ def resume():
     progress["status"] = "running"
     return {"status": "running"}
 
-@app.get("/downloads")
-async def get_downloaded_items():
+@app.get("/downloads", response_model=DownloadedItemsPage)
+async def get_downloaded_items(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=500),
+):
     async with app.state.downloaded_items_lock:
-        return list(downloaded_items)
-        return jsonable_encoder(app.state.downloaded_items)
+        total = len(app.state.downloaded_items)
+        items = app.state.downloaded_items[offset : offset + limit]
+
+    return {
+        "items": items,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
+    }
 
 
 
