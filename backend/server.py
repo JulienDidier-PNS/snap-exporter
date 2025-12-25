@@ -76,8 +76,10 @@ async def progress_stream(request: Request):
                     print("🔴 SSE client disconnected")
                     break
 
-                payload = json.dumps(service_get_progress())
-                yield f"data: {payload}\n\n"
+                progress = service_get_progress()
+                if(progress["status"] != "paused" and progress["status"] != "idle"):
+                    payload = json.dumps(service_get_progress())
+                    yield f"data: {payload}\n\n"
                 await asyncio.sleep(0.5)
 
         except asyncio.CancelledError:
