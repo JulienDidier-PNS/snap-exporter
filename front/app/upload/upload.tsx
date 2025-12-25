@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useRef, useState} from "react";
+import ProgressBar from "@/app/upload/progressBar";
 
 export interface ProgressDTO {
     status: "idle" | "running" | "done" | "paused";
@@ -23,25 +24,7 @@ export default function UploadForm() {
     const [total, setTotal] = useState(0);
     const [outputPath, setOutputPath] = useState("");
 
-
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const [progress, setProgress] = useState<ProgressDTO>({
-        status: "idle",
-        downloaded: 0,
-        total: 0,
-    });
-
-    let percent =
-        progress.total > 0
-            ? Math.round((progress.downloaded / progress.total) * 100)
-            : 0;
-
-    async function fetchProgress() {
-        const res = await fetch("http://127.0.0.1:8000/progress");
-        return (await res.json()) as ProgressDTO;
-    }
 
     const pickFolder = async () => {
         if (!window.electron) return;
@@ -51,26 +34,6 @@ export default function UploadForm() {
             setOutputPath(folder);
         }
     };
-
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const p = await fetchProgress();
-            setProgress(p);
-
-            if (p.status === "done") {
-                clearInterval(interval);
-            }
-
-            percent =
-                progress.total > 0
-                    ? Math.round((progress.downloaded / progress.total) * 100)
-                    : 0;
-
-        }, 800);
-
-        return () => clearInterval(interval);
-    }, []);
-
 
     const handleUpload = async (file: File) => {
         const formData = new FormData();
@@ -146,20 +109,7 @@ export default function UploadForm() {
             </div>
 
             <p>Status: {status}</p>
-            {progress.status !== "idle" && (
-                <div className="w-full mt-4">
-                    <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">
-                        {progress.downloaded} / {progress.total} fichiers — {percent}%
-                    </div>
-
-                    <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                        <div
-                            className="h-full bg-blue-500 transition-all duration-500 ease-out"
-                            style={{ width: `${percent}%` }}
-                        />
-                    </div>
-                </div>
-            )}
+            <ProgressBar></ProgressBar>
         </div>
     );
 }

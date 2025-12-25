@@ -285,22 +285,33 @@ async def download_memory(
                                     return True, len(content)
                                 try:
                                     FFMPEG = str(get_ffmpeg_path())
-                                    await run_blocking(
-                                        subprocess.run,
-                                        [
-                                            FFMPEG, "-y", "-nostdin",
-                                            "-i", str(main_path),
-                                            "-i", str(overlay_path),
-                                            "-filter_complex",
-                                            "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
-                                            "-codec:a", "copy",
-                                            str(merged_path),
-                                        ],
-                                        check=True,
-                                        stdout=subprocess.DEVNULL,
-                                        stderr=subprocess.DEVNULL,
-                                    )
+                                    dt_utc = memory.date.astimezone(timezone.utc)
+                                    iso_time = dt_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                                    metadata_args = ["-metadata", f"creation_time={iso_time}"]
+                                    if memory.latitude is not None and memory.longitude is not None:
+                                        lat = f"{memory.latitude:+.4f}"
+                                        lon = f"{memory.longitude:+.4f}"
+                                        alt = getattr(memory, "altitude", 0.0)
+                                        iso6709 = f"{lat}{lon}+{alt:.3f}/"
+                                        metadata_args += ["-metadata", f"location={iso6709}", "-metadata", f"location-eng={iso6709}"]
 
+                                    await run_blocking(
+                                        lambda: subprocess.run(
+                                            [
+                                                FFMPEG,
+                                                "-y",
+                                                "-i", str(main_path),
+                                                "-i", str(overlay_path),
+                                                "-filter_complex",
+                                                "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
+                                                "-codec:a", "copy",
+                                                str(merged_path),
+                                            ],
+                                            check=True,
+                                            stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL,
+                                        )
+                                    )
 
                                     output_path.write_bytes(merged_path.read_bytes())
 

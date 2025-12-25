@@ -1,6 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import StreamingResponse
+import json
 
 from pydantic import BaseModel
 
@@ -63,6 +65,37 @@ def setup_directories(output_path: str | None = None):
     downloads.mkdir(parents=True, exist_ok=True)
 
     return uploads, downloads, root_dir
+
+@app.get("/progress/stream")
+async def progress_stream(request: Request):
+    async def event_generator():
+        print("🟢 SSE client connected")
+        try:
+            while True:
+                if await request.is_disconnected():
+                    print("🔴 SSE client disconnected")
+                    break
+
+                payload = json.dumps(service_get_progress())
+                yield f"data: {payload}\n\n"
+                await asyncio.sleep(0.5)
+
+        except asyncio.CancelledError:
+            print("⚠️ SSE cancelled")
+            raise
+        except Exception as e:
+            print("❌ SSE error:", e)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
 
 # --- Endpoints ---
 @app.post("/run")
@@ -151,7 +184,7 @@ async def get_downloaded_items(
 if __name__ == "__main__":
     import uvicorn
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     print("Starting FastAPI server...", flush=True)
 
     uvicorn.run(
