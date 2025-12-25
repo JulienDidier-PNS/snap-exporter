@@ -21,8 +21,21 @@ from tqdm.asyncio import tqdm
 from tzlocal import get_localzone
 from datetime import datetime
 from asyncio import Lock
+from concurrent.futures import ThreadPoolExecutor
+from typing import List
 
 progress = {"status": "idle","downloaded": 0, "total": 0}
+
+# ThreadPool for blocking tasks
+blocking_executor = ThreadPoolExecutor(max_workers=2)
+
+async def run_blocking(func, *args):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        blocking_executor,
+        lambda: func(*args)
+    )
+
 
 # DOWNLOADED ITEM HISTORY
 class DownloadedItem(BaseModel):
@@ -140,7 +153,7 @@ def add_exif_data(image_path: Path, memory: Memory):
     except Exception as e:
         print(f"Failed to set EXIF data for {image_path.name}: {e}")
 
-def set_video_metadata(video_path: Path, memory: Memory):
+async def set_video_metadata(video_path: Path, memory: Memory):
     """
     Sets video creation time and Apple Photos-compatible GPS metadata.
     Uses ffmpeg via subprocess to inject metadata without re-encoding.
@@ -171,7 +184,8 @@ def set_video_metadata(video_path: Path, memory: Memory):
 
         # Run ffmpeg: copy streams, inject metadata
         FFMPEG = str(get_ffmpeg_path())
-        subprocess.run(
+        await run_blocking(
+            subprocess.run,
             [
                 FFMPEG,
                 "-y",
@@ -184,6 +198,7 @@ def set_video_metadata(video_path: Path, memory: Memory):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+
 
         # Replace original file
         temp_path.replace(video_path)
@@ -234,13 +249,17 @@ async def download_memory(
 
                         if memory.media_type.lower() == "image":
                             # === IMAGE MERGE ===
-                            with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
-                                if overlay_data:
-                                    with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
-                                        overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
-                                        main_img.alpha_composite(overlay_resized)
-                                merged_img = main_img.convert("RGB")
-                                merged_img.save(output_path, "JPEG")
+                            def merge_image(main_data, overlay_data, output_path):
+                                with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
+                                    if overlay_data:
+                                        with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
+                                            overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
+                                            main_img.alpha_composite(overlay_resized)
+
+                                    merged_img = main_img.convert("RGB")
+                                    merged_img.save(output_path, "JPEG")
+                            await run_blocking(merge_image, main_data, overlay_data, output_path)
+
 
                         elif memory.media_type.lower() == "video":
                             # === VIDEO MERGE ===
@@ -249,7 +268,6 @@ async def download_memory(
                                 merged_path = Path(tmpdir) / "merged.mp4"
                                 with open(main_path, "wb") as f:
                                     f.write(main_data)
-
                                 if overlay_data:
                                     try:
                                         # Validation / Overlay Normalization
@@ -258,31 +276,28 @@ async def download_memory(
 
                                             overlay_path = Path(tmpdir) / "overlay.png"
                                             img.save(overlay_path, "PNG")
-
                                     except Exception as e:
                                         print("Overlay image invalide, fallback main only:", e)
                                         output_path.write_bytes(main_data)
                                         return True, len(content)
-
                                     try:
                                         FFMPEG = str(get_ffmpeg_path())
-                                        subprocess.run(
+                                        await run_blocking(
+                                            subprocess.run,
                                             [
                                                 FFMPEG, "-y", "-nostdin",
                                                 "-i", str(main_path),
                                                 "-i", str(overlay_path),
                                                 "-filter_complex",
-                                                (
-                                                    "[1][0]scale2ref=w=iw:h=ih[overlay][base];"
-                                                    "[base][overlay]overlay=(W-w)/2:(H-h)/2"
-                                                ),
+                                                "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
                                                 "-codec:a", "copy",
                                                 str(merged_path),
                                             ],
                                             check=True,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
+                                            stdout=subprocess.DEVNULL,
+                                            stderr=subprocess.DEVNULL,
                                         )
+
 
                                         output_path.write_bytes(merged_path.read_bytes())
 
@@ -312,10 +327,9 @@ async def download_memory(
                 # Apply metadata
                 if add_exif:
                     if memory.media_type.lower() == "image":
-                        add_exif_data(output_path, memory)
+                        await run_blocking(add_exif_data, output_path, memory)
                     elif memory.media_type.lower() == "video":
-                        set_video_metadata(output_path, memory)
-
+                        await set_video_metadata(output_path, memory)
 
                 async with state.downloaded_items_lock:
                     state.downloaded_items.append(
@@ -410,7 +424,7 @@ def get_progress():
 async def run_import(
     json_path: Path,
     output_dir: Path,
-    concurrent: int = 40,
+    concurrent: int = 10,
     add_exif: bool = True,
     skip_existing: bool = True,
     state: FastAPI.state = None,

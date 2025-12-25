@@ -69,7 +69,7 @@ def setup_directories(output_path: str | None = None):
 async def run(
     file: UploadFile = File(...),
     output_path: str | None = Form(None),
-    concurrent: int = 40,
+    concurrent: int = 10,
     add_exif: bool = True,
     skip_existing: bool = True,
 ):
