@@ -1,12 +1,13 @@
 "use client";
 
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
-export interface progressDTO {
-    status: string;
+export interface ProgressDTO {
+    status: "idle" | "running" | "done" | "paused";
     downloaded: number;
     total: number;
 }
+
 
 declare global {
     interface Window {
@@ -20,12 +21,27 @@ export default function UploadForm() {
     const [status, setStatus] = useState("idle");
     const [downloaded, setDownloaded] = useState(0);
     const [total, setTotal] = useState(0);
-
     const [outputPath, setOutputPath] = useState("");
 
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const [progress, setProgress] = useState<ProgressDTO>({
+        status: "idle",
+        downloaded: 0,
+        total: 0,
+    });
+
+    let percent =
+        progress.total > 0
+            ? Math.round((progress.downloaded / progress.total) * 100)
+            : 0;
+
+    async function fetchProgress() {
+        const res = await fetch("http://127.0.0.1:8000/progress");
+        return (await res.json()) as ProgressDTO;
+    }
 
     const pickFolder = async () => {
         if (!window.electron) return;
@@ -36,31 +52,25 @@ export default function UploadForm() {
         }
     };
 
-    const startPolling = () => {
-        if (intervalRef.current) return;
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const p = await fetchProgress();
+            setProgress(p);
 
-        intervalRef.current = setInterval(async () => {
-            try {
-                const res = await fetch("http://127.0.0.1:8000/progress");
-                const data: progressDTO = await res.json();
-
-                if(data.status === "paused"){
-                    return;
-                }
-
-                setDownloaded(data.downloaded);
-                setTotal(data.total);
-                setStatus(data.status);
-
-                if (data.status === "done") {
-                    clearInterval(intervalRef.current!);
-                    intervalRef.current = null;
-                }
-            } catch (e) {
-                console.error("Progress error", e);
+            if (p.status === "done") {
+                clearInterval(interval);
             }
-        }, 1000);
-    };
+
+            percent =
+                progress.total > 0
+                    ? Math.round((progress.downloaded / progress.total) * 100)
+                    : 0;
+
+        }, 800);
+
+        return () => clearInterval(interval);
+    }, []);
+
 
     const handleUpload = async (file: File) => {
         const formData = new FormData();
@@ -73,7 +83,6 @@ export default function UploadForm() {
         });
 
         setStatus("running");
-        startPolling();
     };
 
     const pause = async () => {
@@ -137,7 +146,20 @@ export default function UploadForm() {
             </div>
 
             <p>Status: {status}</p>
-            <p>Memories traités : {downloaded} / {total}</p>
+            {progress.status !== "idle" && (
+                <div className="w-full mt-4">
+                    <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">
+                        {progress.downloaded} / {progress.total} fichiers — {percent}%
+                    </div>
+
+                    <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                        <div
+                            className="h-full bg-blue-500 transition-all duration-500 ease-out"
+                            style={{ width: `${percent}%` }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
