@@ -26,6 +26,10 @@ from typing import List
 
 progress = {"status": "idle","downloaded": 0, "total": 0}
 
+# Global HTTP client
+http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
+
+
 # ThreadPool for blocking tasks
 blocking_executor = ThreadPoolExecutor(max_workers=2)
 
@@ -227,122 +231,118 @@ async def download_memory(
             url = memory.download_link
             output_path = output_dir / memory.filename
 
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                response = await client.get(url)
-                response.raise_for_status()
-                content = response.content
+            response = await http_client.get(url)
+            response.raise_for_status()
+            content = response.content
 
-                # Detect ZIP (overlay)
-                is_zip = response.headers.get("Content-Type", "").lower().startswith("application/zip")
+            # Detect ZIP (overlay)
+            is_zip = response.headers.get("Content-Type", "").lower().startswith("application/zip")
 
-                if is_zip:
-                    with zipfile.ZipFile(io.BytesIO(content)) as zf:
-                        files = zf.namelist()
-                        main_file = next((f for f in files if "-main" in f), None)
-                        overlay_file = next((f for f in files if "-overlay" in f), None)
+            if is_zip:
+                with zipfile.ZipFile(io.BytesIO(content)) as zf:
+                    files = zf.namelist()
+                    main_file = next((f for f in files if "-main" in f), None)
+                    overlay_file = next((f for f in files if "-overlay" in f), None)
 
-                        if not main_file:
-                            raise ValueError("No main media file found in ZIP.")
+                    if not main_file:
+                        raise ValueError("No main media file found in ZIP.")
 
-                        main_data = zf.read(main_file)
-                        overlay_data = zf.read(overlay_file) if overlay_file else None
+                    main_data = zf.read(main_file)
+                    overlay_data = zf.read(overlay_file) if overlay_file else None
 
-                        if memory.media_type.lower() == "image":
-                            # === IMAGE MERGE ===
-                            def merge_image(main_data, overlay_data, output_path):
-                                with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
-                                    if overlay_data:
-                                        with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
-                                            overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
-                                            main_img.alpha_composite(overlay_resized)
-
-                                    merged_img = main_img.convert("RGB")
-                                    merged_img.save(output_path, "JPEG")
-                            await run_blocking(merge_image, main_data, overlay_data, output_path)
-
-
-                        elif memory.media_type.lower() == "video":
-                            # === VIDEO MERGE ===
-                            with tempfile.TemporaryDirectory() as tmpdir:
-                                main_path = Path(tmpdir) / "main.mp4"
-                                merged_path = Path(tmpdir) / "merged.mp4"
-                                with open(main_path, "wb") as f:
-                                    f.write(main_data)
+                    if memory.media_type.lower() == "image":
+                        # === IMAGE MERGE ===
+                        def merge_image(main_data, overlay_data, output_path):
+                            with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
                                 if overlay_data:
-                                    try:
-                                        # Validation / Overlay Normalization
-                                        with Image.open(io.BytesIO(overlay_data)) as img:
-                                            img = img.convert("RGBA")
+                                    with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
+                                        overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
+                                        main_img.alpha_composite(overlay_resized)
 
-                                            overlay_path = Path(tmpdir) / "overlay.png"
-                                            img.save(overlay_path, "PNG")
-                                    except Exception as e:
-                                        print("Overlay image invalide, fallback main only:", e)
-                                        output_path.write_bytes(main_data)
-                                        return True, len(content)
-                                    try:
-                                        FFMPEG = str(get_ffmpeg_path())
-                                        await run_blocking(
-                                            subprocess.run,
-                                            [
-                                                FFMPEG, "-y", "-nostdin",
-                                                "-i", str(main_path),
-                                                "-i", str(overlay_path),
-                                                "-filter_complex",
-                                                "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
-                                                "-codec:a", "copy",
-                                                str(merged_path),
-                                            ],
-                                            check=True,
-                                            stdout=subprocess.DEVNULL,
-                                            stderr=subprocess.DEVNULL,
-                                        )
+                                merged_img = main_img.convert("RGB")
+                                merged_img.save(output_path, "JPEG")
+                        await run_blocking(merge_image, main_data, overlay_data, output_path)
 
 
-                                        output_path.write_bytes(merged_path.read_bytes())
+                    elif memory.media_type.lower() == "video":
+                        # === VIDEO MERGE ===
+                        with tempfile.TemporaryDirectory() as tmpdir:
+                            main_path = Path(tmpdir) / "main.mp4"
+                            merged_path = Path(tmpdir) / "merged.mp4"
+                            with open(main_path, "wb") as f:
+                                f.write(main_data)
+                            if overlay_data:
+                                try:
+                                    # Validation / Overlay Normalization
+                                    with Image.open(io.BytesIO(overlay_data)) as img:
+                                        img = img.convert("RGBA")
 
-                                    except subprocess.CalledProcessError as e:
-                                        print("Error during ffmepg process -> Bad overlay normalization")
-                                        print("Saving main file only...")
-                                        output_path.write_bytes(main_data)
+                                        overlay_path = Path(tmpdir) / "overlay.png"
+                                        img.save(overlay_path, "PNG")
+                                except Exception as e:
+                                    print("Overlay image invalide, fallback main only:", e)
+                                    output_path.write_bytes(main_data)
+                                    return True, len(content)
+                                try:
+                                    FFMPEG = str(get_ffmpeg_path())
+                                    await run_blocking(
+                                        subprocess.run,
+                                        [
+                                            FFMPEG, "-y", "-nostdin",
+                                            "-i", str(main_path),
+                                            "-i", str(overlay_path),
+                                            "-filter_complex",
+                                            "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
+                                            "-codec:a", "copy",
+                                            str(merged_path),
+                                        ],
+                                        check=True,
+                                        stdout=subprocess.DEVNULL,
+                                        stderr=subprocess.DEVNULL,
+                                    )
 
-                                else:
-                                    # No overlay file
+
+                                    output_path.write_bytes(merged_path.read_bytes())
+
+                                except subprocess.CalledProcessError as e:
+                                    print("Error during ffmepg process -> Bad overlay normalization")
+                                    print("Saving main file only...")
                                     output_path.write_bytes(main_data)
 
-                        else:
-                            raise ValueError(f"Unsupported media type: {memory.media_type}")
+                            else:
+                                # No overlay file
+                                output_path.write_bytes(main_data)
 
-                        bytes_downloaded = len(content)
+                    else:
+                        raise ValueError(f"Unsupported media type: {memory.media_type}")
 
-                else:
-                    # === NORMAL DOWNLOAD (not ZIP) ===
-                    output_path.write_bytes(content)
                     bytes_downloaded = len(content)
+            else:
+                # === NORMAL DOWNLOAD (not ZIP) ===
+                output_path.write_bytes(content)
+                bytes_downloaded = len(content)
 
-                # Set timestamps
-                timestamp = memory.date.timestamp()
-                os.utime(output_path, (timestamp, timestamp))
+            # Set timestamps
+            timestamp = memory.date.timestamp()
+            os.utime(output_path, (timestamp, timestamp))
 
-                # Apply metadata
-                if add_exif:
-                    if memory.media_type.lower() == "image":
-                        await run_blocking(add_exif_data, output_path, memory)
-                    elif memory.media_type.lower() == "video":
-                        await set_video_metadata(output_path, memory)
+            # Apply metadata
+            if add_exif:
+                if memory.media_type.lower() == "image":
+                    await run_blocking(add_exif_data, output_path, memory)
+                elif memory.media_type.lower() == "video":
+                    await set_video_metadata(output_path, memory)
 
-                async with state.downloaded_items_lock:
-                    state.downloaded_items.append(
-                        DownloadedItem(
-                            filename=output_path.name,
-                            date=memory.date,
-                            media_type=memory.media_type.lower(),
-                        )
+            async with state.downloaded_items_lock:
+                state.downloaded_items.append(
+                    DownloadedItem(
+                        filename=output_path.name,
+                        date=memory.date,
+                        media_type=memory.media_type.lower(),
                     )
+                )
 
-
-
-                return True, bytes_downloaded
+            return True, bytes_downloaded
 
         except Exception as e:
             print(f"\nError downloading {memory.filename}: {e}")
