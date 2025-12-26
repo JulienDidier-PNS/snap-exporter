@@ -46,7 +46,6 @@ export default function UploadForm() {
                 method: "POST",
                 body: formData,
             });
-
             setStatus("running");
         }
     };
@@ -75,6 +74,7 @@ export default function UploadForm() {
     }
 
     const [hoverFolder, setHoverFolder] = useState(false);
+    const [hoverJson, setHoverJson] = useState(false);
 
     return (
         <div className="p-4 flex flex-col gap-4 items-center">
@@ -92,50 +92,63 @@ export default function UploadForm() {
                         : "Sélectionné ✅"
                     : "Choisir un dossier"}
             </button>
-            <p>Dossier de sortie : {outputPath}</p>
             {isPickup() && (
                 <>
+                    <p>Dossier de sortie : {outputPath}</p>
+                    <input
+                        type="file"
+                        accept=".json"
+                        ref={fileInputRef}
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files.length > 0) {
+                                setJsonExportFile(e.target.files[0]);
+                            }
+                        }}
+                    />
                     <button
-                        id={"startImportBtn"}
+                        id="startImportBtn"
+                        onMouseEnter={() => setHoverJson(true)}
+                        onMouseLeave={() => setHoverJson(false)}
                         disabled={outputPath == null || outputPath === ""}
                         onClick={() => fileInputRef.current?.click()}
                         className={`px-4 py-2 rounded text-white btn
-                            ${
-                            !isPickup()
-                                ? "btn-disabled"
-                                : isJsonSelected() ?
-                                    "btn-ok" : "btn-todo"
-                        }`
+                        ${!isPickup() ? "btn-disabled" : isJsonSelected() ? "btn-ok" : "btn-todo"}`
                         }
                     >
-                        Commencer l'import (.json)
+                        { isJsonSelected() && isPickup() ?
+                            hoverJson ? "" +
+                                "Changer de fichier 🔍" :
+                                "Fichier sélectionné ✅" :
+                            "Sélectionner un fichier"
+                        }
                     </button>
                 </>
             )}
 
-            {isJsonSelected() && (
-                <>
-                    <div className="flex gap-2 w-full justify-between">
-                        <button
-                            onClick={resume}
-                            disabled={!isPickup() || !isJsonSelected() || status === "running"}
-                            className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
-                        >
-                            {status === "idle" ? "Lancer le téléchargement" : "Reprendre"}
-                        </button>
-                        <button
-                            onClick={pause}
-                            disabled={status !== "running"}
-                            className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
-                        >
-                            Pause
-                        </button>
-                    </div>
-                </>
-            )}
-
-            <p>Status: {status}</p>
-            <ProgressBar></ProgressBar>
+            {isJsonSelected() && isPickup() &&
+                (
+                    <>
+                        <div className="flex gap-2 w-full justify-between">
+                            <button
+                                onClick={resume}
+                                disabled={!isPickup() || !isJsonSelected() || status === "running"}
+                                className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+                            >
+                                {status === "idle" ? "Télécharger" : "Reprendre"}
+                            </button>
+                            <button
+                                onClick={pause}
+                                disabled={status !== "running"}
+                                className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+                            >
+                                Pause
+                            </button>
+                        </div>
+                        <ProgressBar></ProgressBar>
+                    </>
+                )
+            }
         </div>
     );
 }

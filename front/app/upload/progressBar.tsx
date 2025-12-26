@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 interface ProgressDTO {
-    status: "idle" | "running" | "done";
+    status: "idle" | "running" | "done" | "paused";
     downloaded: number;
     total: number;
 }
@@ -42,7 +42,14 @@ export default function ProgressBar() {
 
     return (
         <div className="w-full mt-4">
-            <p>progress bar</p>
+            <p>
+                {
+                    progress.status === "running" ? "Export en cours" :
+                        progress.status === "idle" ? "En attente" :
+                            progress.status === "paused" ? "Export en pause":
+                                progress.status === "done" ? "Export terminé" : ""
+                }
+            </p>
             <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">
                 {progress.downloaded} / {progress.total} — {percent}%
             </div>

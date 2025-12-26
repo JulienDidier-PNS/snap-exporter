@@ -71,3 +71,35 @@ body {
   border: none;
   cursor: pointer;
 }
+
+/* BTN STYLES */
+.btn{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-todo{
+  background-color: royalblue;
+  border: 1px solid white;
+}
+
+.btn-todo:hover{
+  background-color: royalblue;
+  border: 1px solid white;
+  scale: 110%;
+}
+
+.btn-ok{
+  background-color: forestgreen;
+  border: 1px solid white;
+}
+
+.btn-disabled{
+  background-color: lightgray;
+  border: 1px solid white;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
