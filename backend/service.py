@@ -24,7 +24,7 @@ from asyncio import Lock
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
-progress = {"status": "idle","downloaded": 0, "total": 0}
+progress = {"status": "idle","downloaded": 0, "total": 0,"eta": None}
 
 # Global HTTP client
 http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
@@ -33,11 +33,11 @@ http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
 # ThreadPool for blocking tasks
 blocking_executor = ThreadPoolExecutor(max_workers=2)
 
-async def run_blocking(func, *args):
+async def run_blocking(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         blocking_executor,
-        lambda: func(*args)
+        lambda: func(*args, **kwargs)
     )
 
 
@@ -357,7 +357,14 @@ async def download_memory(
 
         except Exception as e:
             print(f"\nError downloading {memory.filename}: {e}")
+
+            # Ajouter à la liste des fichiers échoués
+            if state is not None:
+                async with state.failed_items_lock:
+                    state.failed_items.append(memory.filename)
+
             return False, 0
+
 
 async def download_all(
     memories: list[Memory],
@@ -386,6 +393,7 @@ async def download_all(
     progress["status"]="running"
     progress["total"] = len(to_download)
     progress["downloaded"] = stats.downloaded
+    progress["eta"] = None
 
     progress_bar = tqdm(
         total=len(to_download),
@@ -403,6 +411,13 @@ async def download_all(
                                                             state,
                                                         )
 
+        elapsed = time.time() - start_time
+        if progress["downloaded"] > 0:
+            rate = elapsed / progress["downloaded"]  # sec par fichier
+            remaining = rate * (progress["total"] - progress["downloaded"])
+            progress["eta"] = round(remaining)
+        else:
+            progress["eta"] = None
         if success:
             stats.downloaded += 1
             progress["downloaded"]+=1
@@ -412,8 +427,8 @@ async def download_all(
 
         elapsed = time.time() - start_time
         mb_per_sec = (stats.mb) / elapsed if elapsed > 0 else 0
-        progress_bar.set_postfix({"MB/s": f"{mb_per_sec:.2f}"}, refresh=False)
-        progress_bar.update(1)
+        #rogress_bar.set_postfix({"MB/s": f"{mb_per_sec:.2f}"}, refresh=False)
+        #progress_bar.update(1)
 
     await asyncio.gather(*[process_and_update(m) for m in to_download])
 
@@ -421,12 +436,17 @@ async def download_all(
     elapsed = time.time() - start_time
     mb_total = stats.mb
     mb_per_sec = mb_total / elapsed if elapsed > 0 else 0
-    print(
-        f"\n{'='*50}\nDownloaded: {stats.downloaded} ({mb_total:.1f} MB © {mb_per_sec:.2f} MB/s) | "
-        f"Skipped: {stats.skipped} | Failed: {stats.failed}\n{'='*50}"
-    )
+    #print(
+    #    f"\n{'='*50}\nDownloaded: {stats.downloaded} ({mb_total:.1f} MB © {mb_per_sec:.2f} MB/s) | "
+    #    f"Skipped: {stats.skipped} | Failed: {stats.failed}\n{'='*50}"
+    #)
 
-    progress["status"]="done"
+    progress["status"] = "done"
+    if state is not None and state.failed_items:
+        print("\nFichiers échoués :")
+        for f in state.failed_items:
+            print("-", f)
+
     return
 
 def get_progress():
@@ -447,8 +467,8 @@ async def run_import(
     global downloaded_items
     async with state.downloaded_items_lock:
         state.downloaded_items.clear()
-
-
+    async with state.failed_items_lock:
+        state.failed_items.clear()
 
     await download_all(
         memories=memories,

@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import ProgressBar from "@/app/upload/progressBar";
 
 export interface ProgressDTO {
@@ -8,7 +8,6 @@ export interface ProgressDTO {
     downloaded: number;
     total: number;
 }
-
 
 declare global {
     interface Window {
@@ -20,11 +19,10 @@ declare global {
 
 export default function UploadForm() {
     const [status, setStatus] = useState("idle");
-    const [downloaded, setDownloaded] = useState(0);
-    const [total, setTotal] = useState(0);
     const [outputPath, setOutputPath] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [jsonExportFile, setJsonExportFile] = useState<File | null>(null);
 
     const pickFolder = async () => {
         if (!window.electron) return;
@@ -35,17 +33,22 @@ export default function UploadForm() {
         }
     };
 
-    const handleUpload = async (file: File) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("output_path", outputPath);
+    const handleUpload = async () => {
+        if(!jsonExportFile){
+            return setOutputPath("");
+        }
+        else{
+            const formData = new FormData();
+            formData.append("file", jsonExportFile);
+            formData.append("output_path", outputPath);
 
-        await fetch("http://127.0.0.1:8000/run", {
-            method: "POST",
-            body: formData,
-        });
+            await fetch("http://127.0.0.1:8000/run", {
+                method: "POST",
+                body: formData,
+            });
 
-        setStatus("running");
+            setStatus("running");
+        }
     };
 
     const pause = async () => {
@@ -54,59 +57,82 @@ export default function UploadForm() {
     };
 
     const resume = async () => {
-        await fetch("http://127.0.0.1:8000/resume", { method: "POST" });
-        setStatus("running");
+        if(status === "idle") {
+            handleUpload();
+        }
+        else{
+            await fetch("http://127.0.0.1:8000/resume", { method: "POST" });
+            setStatus("running");
+        }
     };
 
+    const isPickup = () => {
+        return outputPath != null && outputPath != "";
+    }
+
+    const isJsonSelected = () => {
+        return jsonExportFile != null;
+    }
+
+    const [hoverFolder, setHoverFolder] = useState(false);
+
     return (
-        <div className="p-4 flex flex-col gap-4">
+        <div className="p-4 flex flex-col gap-4 items-center">
             <button
                 onClick={pickFolder}
-                className="px-4 py-2 bg-gray-700 text-white rounded"
+                onMouseEnter={() => setHoverFolder(true)}
+                onMouseLeave={() => setHoverFolder(false)}
+                className={`px-4 py-2 rounded text-white btn
+                    ${isPickup() ? "btn-ok" : "btn-todo"}
+                `}
             >
-                Choisir un dossier
+                {isPickup()
+                    ? hoverFolder
+                        ? "Changer de dossier 🔍"
+                        : "Sélectionné ✅"
+                    : "Choisir un dossier"}
             </button>
             <p>Dossier de sortie : {outputPath}</p>
+            {isPickup() && (
+                <>
+                    <button
+                        id={"startImportBtn"}
+                        disabled={outputPath == null || outputPath === ""}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`px-4 py-2 rounded text-white btn
+                            ${
+                            !isPickup()
+                                ? "btn-disabled"
+                                : isJsonSelected() ?
+                                    "btn-ok" : "btn-todo"
+                        }`
+                        }
+                    >
+                        Commencer l'import (.json)
+                    </button>
+                </>
+            )}
 
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={(e) => {
-                    if (e.target.files) {
-                        handleUpload(e.target.files[0]);
-                        e.target.value = "";
-                    }
-                }}
-            />
-
-            <button
-                id={"startImportBtn"}
-                disabled={outputPath == null || outputPath === ""}
-                onClick={() => fileInputRef.current?.click()}
-                className="px-4 py-2 bg-blue-500 text-white rounded"
-            >
-                Commencer l'import (.json)
-            </button>
-
-            <div className="flex gap-2">
-                <button
-                    onClick={pause}
-                    disabled={status !== "running"}
-                    className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
-                >
-                    Pause
-                </button>
-
-                <button
-                    onClick={resume}
-                    disabled={status !== "paused"}
-                    className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
-                >
-                    Resume
-                </button>
-            </div>
+            {isJsonSelected() && (
+                <>
+                    <div className="flex gap-2 w-full justify-between">
+                        <button
+                            onClick={resume}
+                            disabled={!isPickup() || !isJsonSelected() || status === "running"}
+                            className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+                        >
+                            {status === "idle" ? "Lancer le téléchargement" : "Reprendre"}
+                        </button>
+                        <button
+                            onClick={pause}
+                            disabled={status !== "running"}
+                            className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+                        >
+                            Pause
+                        </button>
+                    </div>
+                </>
+            )}
 
             <p>Status: {status}</p>
             <ProgressBar></ProgressBar>

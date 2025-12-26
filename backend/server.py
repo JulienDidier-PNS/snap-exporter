@@ -47,6 +47,8 @@ app.add_middleware(
 async def startup():
     app.state.downloaded_items = []
     app.state.downloaded_items_lock = asyncio.Lock()
+    app.state.failed_items = []
+    app.state.failed_items_lock = asyncio.Lock()
 
 
 # --- Setup dossiers ---
@@ -69,24 +71,20 @@ def setup_directories(output_path: str | None = None):
 @app.get("/progress/stream")
 async def progress_stream(request: Request):
     async def event_generator():
-        print("🟢 SSE client connected")
         try:
             while True:
                 if await request.is_disconnected():
-                    print("🔴 SSE client disconnected")
                     break
 
                 progress = service_get_progress()
-                if(progress["status"] != "paused" and progress["status"] != "idle"):
-                    payload = json.dumps(service_get_progress())
-                    yield f"data: {payload}\n\n"
+                payload = json.dumps(service_get_progress())
+                yield f"data: {payload}\n\n"
                 await asyncio.sleep(0.5)
 
         except asyncio.CancelledError:
-            print("⚠️ SSE cancelled")
             raise
         except Exception as e:
-            print("❌ SSE error:", e)
+            print("SSE error:", e)
 
     return StreamingResponse(
         event_generator(),
@@ -146,10 +144,6 @@ async def run(
         "output_dir": str(output_dir)
     }
 
-@app.get("/progress")
-def progress():
-    return service_get_progress()
-
 @app.post("/pause")
 def pause():
     pause_event.clear()
@@ -186,13 +180,13 @@ async def get_downloaded_items(
 if __name__ == "__main__":
     import uvicorn
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARNING)
     print("Starting FastAPI server...", flush=True)
 
     uvicorn.run(
         app,
         host="127.0.0.1",
         port=8000,
-        log_level="info",
+        log_level="warning",
         reload=False
     )
