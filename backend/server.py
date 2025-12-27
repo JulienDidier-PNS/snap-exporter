@@ -11,7 +11,7 @@ import shutil
 import asyncio
 import logging
 
-from service import run_import, get_progress as service_get_progress, pause_event
+from service import run_import, get_progress as service_get_progress, pause_event, get_error_list
 
 from typing import List
 from datetime import datetime
@@ -47,7 +47,7 @@ app.add_middleware(
 async def startup():
     app.state.downloaded_items = []
     app.state.downloaded_items_lock = asyncio.Lock()
-    app.state.failed_items = []
+    app.state.failed_items = []  # Exemple initial
     app.state.failed_items_lock = asyncio.Lock()
 
 
@@ -80,6 +80,34 @@ async def progress_stream(request: Request):
                 payload = json.dumps(service_get_progress())
                 yield f"data: {payload}\n\n"
                 await asyncio.sleep(0.5)
+
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print("SSE error:", e)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+@app.get("/file/error/stream")
+async def error_stream(request: Request):
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+
+                errorList = get_error_list(app.state)
+                payload = json.dumps(errorList)
+                yield f"data: {payload}\n\n"
+                await asyncio.sleep(5.0)
 
         except asyncio.CancelledError:
             raise

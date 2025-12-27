@@ -41,7 +41,7 @@ export default function ProgressBar() {
             : 0;
 
     return (
-        <div className="w-full mt-4">
+        <div className="w-full mt-4 bg-amber-50 rounded-lg p-2">
             <p>
                 {
                     progress.status === "running" ? "Export en cours" :

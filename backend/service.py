@@ -29,7 +29,6 @@ progress = {"status": "idle","downloaded": 0, "total": 0,"eta": None}
 # Global HTTP client
 http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
 
-
 # ThreadPool for blocking tasks
 blocking_executor = ThreadPoolExecutor(max_workers=2)
 
@@ -212,6 +211,10 @@ async def set_video_metadata(video_path: Path, memory: Memory):
 
     except Exception as e:
         print(f"Failed to set video metadata for {video_path.name}: {e}")
+        # Ajouter à la liste des fichiers échoués
+        if state is not None:
+            async with state.failed_items_lock:
+                state.failed_items.append(memory.filename)
 
 def detect_image_ext(data: bytes) -> str:
     if data.startswith(b"\x89PNG"):
@@ -451,6 +454,9 @@ async def download_all(
 
 def get_progress():
     return progress
+
+def get_error_list(state):
+    return getattr(state, "failed_items", [])
 
 async def run_import(
     json_path: Path,
