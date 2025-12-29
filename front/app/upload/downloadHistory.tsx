@@ -125,6 +125,7 @@ export default function DownloadHistory() {
                                     <button
                                         disabled={currentPage === 0}
                                         onClick={() => loadPage(currentPage - 1)}
+                                        className="cursor-pointer"
                                     >
                                         ⬅️
                                     </button>
@@ -135,7 +136,7 @@ export default function DownloadHistory() {
                                         ) : (
                                             <button
                                                 key={i}
-                                                className={p === currentPage ? "font-bold underline" : ""}
+                                                className={`${p === currentPage ? "font-bold underline" : ""} cursor-pointer`}
                                                 onClick={() => loadPage(p as number)}
                                             >
                                                 {p + 1}
@@ -146,6 +147,7 @@ export default function DownloadHistory() {
                                     <button
                                         disabled={currentPage + 1 >= totalPages}
                                         onClick={() => loadPage(currentPage + 1)}
+                                        className="cursor-pointer"
                                     >
                                         ➡️
                                     </button>

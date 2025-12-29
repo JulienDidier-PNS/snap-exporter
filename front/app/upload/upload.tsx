@@ -158,7 +158,7 @@ export default function UploadForm() {
                             </button>
                             <button
                                 onClick={pause}
-                                disabled={progress.status === "done"}
+                                disabled={progress.status === "done" || progress.status === "paused"}
                                 className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
                             >
                                 Pause
