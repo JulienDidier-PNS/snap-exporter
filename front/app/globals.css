@@ -44,6 +44,10 @@ body {
   width: 30rem;
 }
 
+.histo-container{
+  background-color: #0057a4;
+  border: 1px solid var(--foreground);
+}
 .histo-list{
   display: flex;
   flex-direction: column;
@@ -58,7 +62,6 @@ body {
   scroll-behavior: smooth;
   overflow-y: scroll;
 
-  background-color: white;
   color: #0a0a0a;
 }
 

@@ -152,14 +152,14 @@ export default function UploadForm() {
                             <button
                                 onClick={resume}
                                 disabled={!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done"}
-                                className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+                                className={`${!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done" ? "cursor-not-allowed" : ""} px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50`}
                             >
                                 {progress.status === "idle" ? "Télécharger" : "Reprendre"}
                             </button>
                             <button
                                 onClick={pause}
                                 disabled={progress.status === "done" || progress.status === "paused"}
-                                className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
+                                className={`${progress.status === "done" || progress.status === "paused" ? "cursor-not-allowed" : ""} px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50`}
                             >
                                 Pause
                             </button>
@@ -184,7 +184,8 @@ export default function UploadForm() {
                         </h2>
 
                         <p className="text-sm text-gray-600 mb-4">
-                            Cette action va arrêter l’export en cours et recommencer depuis le début.
+                            Cette action va arrêter l’export en cours et recommencer depuis le début.<br/>
+                            <strong>Tous les fichiers précédemment télécharger seront supprimés</strong><br/>
                             Êtes-vous sûr ?
                         </p>
 
