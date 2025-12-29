@@ -23,7 +23,7 @@ def task_done_callback(task: asyncio.Task):
     global current_run_task
     current_run_task = None
 
-#pPAGINATION FOR DOWNLOADED ITEMS
+#PAGINATION FOR DOWNLOADED ITEMS
 class DownloadedItemDTO(BaseModel):
     filename: str
     date: datetime
@@ -56,7 +56,7 @@ async def startup():
     app.state.failed_items_lock = asyncio.Lock()
 
 
-# --- Setup dossiers ---
+# --- Setup folders ---
 def setup_directories(output_path: str | None = None):
     # Base folder
     base_path = Path(output_path).expanduser().resolve() if output_path else Path.home()
@@ -145,18 +145,18 @@ async def run(
         raise HTTPException(409, "A download is already running")
 
     print("RUN : Setting up directories...")
-    # Création des dossiers
+    #Folders creation
     uploads, downloads, root_dir = setup_directories(output_path)
     
-    # Fichier uploadé
+    # Save uploaded JSON file
     json_path = uploads / file.filename
     with open(json_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    # Valeur par défaut pour run_import
+    #output directory
     output_dir = downloads
 
-    # Sécurité si un chemin spécifique est fourni
+    # Custom output directory validation
     if output_path:
         output_dir = Path(output_path).expanduser().resolve() / "SnapchatExporter" / "downloads"
         BASE_ALLOWED_DIR = Path.home()
@@ -164,9 +164,9 @@ async def run(
             raise HTTPException(status_code=400, detail="Invalid output directory")
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    pause_event.set()  # lancement possible si pause
+    pause_event.set()  # start possible if paused
 
-    # Lancer le téléchargement en tâche asynchrone
+    # Start the download as an asynchronous task
     current_run_task = asyncio.create_task(
         run_import(
             json_path=json_path,
