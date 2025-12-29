@@ -63,6 +63,19 @@ export default function UploadForm() {
         }
     };
 
+    const [openRestartModal, setOpenRestartModal] = useState(false);
+    const restart = async () => {
+        await fetch("http://127.0.0.1:8000/restart", {
+            method: "POST",
+            body: new FormData(),
+        });
+        setJsonExportFile(null);
+        setOutputPath(null);
+    };
+
+
+
+
     const isPickup = () => {
         return outputPath != null && outputPath != "";
     }
@@ -75,7 +88,8 @@ export default function UploadForm() {
     const [hoverJson, setHoverJson] = useState(false);
 
     return (
-        <div className="p-4 flex flex-col gap-4 items-center w-full">
+        <>
+            <div className="p-4 flex flex-col gap-4 items-center w-full">
             <div className={"flex flex-row gap-4 w-full justify-center p-4 custom-bg-blue rounded-lg"}>
                 <button
                     onClick={pickFolder}
@@ -144,16 +158,57 @@ export default function UploadForm() {
                             </button>
                             <button
                                 onClick={pause}
-                                disabled={progress.status !== "running" || progress.status === "done"}
+                                disabled={progress.status === "done"}
                                 className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
                             >
                                 Pause
                             </button>
+                            <button
+                                onClick={() => setOpenRestartModal(true)}
+                                className="px-4 py-2 bg-orange-500 text-white rounded"
+                            >
+                                🔄 Redémarrer
+                            </button>
+
                         </div>
                         <ProgressBar></ProgressBar>
                     </div>
                 )
             }
-        </div>
+            </div>
+            {openRestartModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+                        <h2 className="text-lg font-bold mb-2">
+                            Confirmer le redémarrage
+                        </h2>
+
+                        <p className="text-sm text-gray-600 mb-4">
+                            Cette action va arrêter l’export en cours et recommencer depuis le début.
+                            Êtes-vous sûr ?
+                        </p>
+
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setOpenRestartModal(false)}
+                                className="px-4 py-2 rounded bg-gray-200"
+                            >
+                                Annuler
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    await restart();
+                                    setOpenRestartModal(false);
+                                }}
+                                className="px-4 py-2 rounded bg-red-500 text-white"
+                            >
+                                Confirmer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

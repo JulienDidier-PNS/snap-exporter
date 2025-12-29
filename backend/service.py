@@ -32,6 +32,10 @@ http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
 # ThreadPool for blocking tasks
 blocking_executor = ThreadPoolExecutor(max_workers=2)
 
+def task_done_callback(task: asyncio.Task):
+    global current_run_task
+    current_run_task = None
+
 async def run_blocking(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
@@ -340,6 +344,8 @@ async def download_memory(
             timestamp = memory.date.timestamp()
             os.utime(output_path, (timestamp, timestamp))
 
+            if asyncio.current_task().cancelled():
+                raise asyncio.CancelledError()
             # Apply metadata
             if add_exif:
                 if memory.media_type.lower() == "image":
@@ -406,13 +412,17 @@ async def download_all(
     )
 
     async def process_and_update(memory):
-        success, bytes_downloaded = await download_memory(
-                                                            memory,
-                                                            output_dir,
-                                                            add_exif,
-                                                            semaphore,
-                                                            state,
-                                                        )
+        try:
+            await pause_event.wait()
+            success, bytes_downloaded = await download_memory(
+                memory,
+                output_dir,
+                add_exif,
+                semaphore,
+                state,
+            )
+        except asyncio.CancelledError:
+            raise
 
         elapsed = time.time() - start_time
         if progress["downloaded"] > 0:
@@ -433,7 +443,15 @@ async def download_all(
         #rogress_bar.set_postfix({"MB/s": f"{mb_per_sec:.2f}"}, refresh=False)
         #progress_bar.update(1)
 
-    await asyncio.gather(*[process_and_update(m) for m in to_download])
+    try:
+        await asyncio.gather(
+            *[process_and_update(m) for m in to_download],
+            return_exceptions=False
+        )
+
+    except asyncio.CancelledError:
+        print("Download cancelled")
+        raise
 
     progress_bar.close()
     elapsed = time.time() - start_time
@@ -484,3 +502,32 @@ async def run_import(
         skip_existing=skip_existing,
         state=state,
     )
+
+
+def reset_state(state, output_dir: Path):
+    #Stop logique
+    pause_event.clear()
+
+    #Reset progress
+    progress["status"] = "idle"
+    progress["downloaded"] = 0
+    progress["total"] = 0
+    progress["eta"] = None
+
+    #Delete previous files generated
+    if output_dir.exists():
+        for item in output_dir.iterdir():
+            try:
+                if item.is_file():
+                    item.unlink()
+            except Exception as e:
+                print(f"Failed to delete {item}: {e}")
+
+    #Reset histories
+    async def clear_state():
+        async with state.downloaded_items_lock:
+            state.downloaded_items.clear()
+        async with state.failed_items_lock:
+            state.failed_items.clear()
+
+    return clear_state()

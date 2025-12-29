@@ -17,6 +17,11 @@ from typing import List
 from datetime import datetime
 
 app = FastAPI()
+current_run_task: asyncio.Task | None = None
+
+def task_done_callback(task: asyncio.Task):
+    global current_run_task
+    current_run_task = None
 
 #pPAGINATION FOR DOWNLOADED ITEMS
 class DownloadedItemDTO(BaseModel):
@@ -134,6 +139,12 @@ async def run(
     add_exif: bool = True,
     skip_existing: bool = True,
 ):
+    print("Received /run request")
+    global current_run_task
+    if current_run_task and not current_run_task.done():
+        raise HTTPException(409, "A download is already running")
+
+    print("RUN : Setting up directories...")
     # Création des dossiers
     uploads, downloads, root_dir = setup_directories(output_path)
     
@@ -156,7 +167,7 @@ async def run(
     pause_event.set()  # lancement possible si pause
 
     # Lancer le téléchargement en tâche asynchrone
-    asyncio.create_task(
+    current_run_task = asyncio.create_task(
         run_import(
             json_path=json_path,
             output_dir=output_dir,
@@ -166,6 +177,7 @@ async def run(
             state=app.state,
         )
     )
+    current_run_task.add_done_callback(task_done_callback)
 
     return {
         "status": "running",
@@ -201,6 +213,58 @@ async def get_downloaded_items(
         "offset": offset,
         "limit": limit,
     }
+
+@app.post("/restart")
+async def restart(output_path: str | None = Form(None)):
+    global current_run_task
+
+    #cancel current task
+    if current_run_task and not current_run_task.done():
+        current_run_task.cancel()
+        try:
+            await current_run_task
+        except asyncio.CancelledError:
+            print("Run task cancelled successfully")
+        finally:
+            current_run_task = None
+    else:
+        current_run_task = None
+
+
+
+    #stop any ongoing download
+    pause_event.clear()
+
+    #reset progress
+    progress = service_get_progress()
+    progress.update({
+        "status": "idle",
+        "downloaded": 0,
+        "total": 0,
+        "eta": None,
+    })
+
+    #clean downloads folder
+    _, downloads, _ = setup_directories(output_path)
+
+    if downloads.exists():
+        for f in downloads.iterdir():
+            if f.is_file():
+                try:
+                    f.unlink()
+                except Exception as e:
+                    print("Delete failed:", e)
+
+    #clear downloaded and failed items
+    async with app.state.downloaded_items_lock:
+        app.state.downloaded_items.clear()
+
+    async with app.state.failed_items_lock:
+        app.state.failed_items.clear()
+
+    return {"status": "idle"}
+
+
 
 
 
