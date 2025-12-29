@@ -32,16 +32,20 @@ http_client = httpx.AsyncClient(timeout=30.0, follow_redirects=True)
 # ThreadPool for blocking tasks
 blocking_executor = ThreadPoolExecutor(max_workers=2)
 
-def task_done_callback(task: asyncio.Task):
-    global current_run_task
-    current_run_task = None
-
 async def run_blocking(func, *args, **kwargs):
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         blocking_executor,
         lambda: func(*args, **kwargs)
     )
+
+def format_eta(seconds: float) -> str:
+    if seconds is None:
+        return None
+    seconds = int(seconds)
+    h, remainder = divmod(seconds, 3600)
+    m, s = divmod(remainder, 60)
+    return f"{h:02}:{m:02}:{s:02}"
 
 
 # DOWNLOADED ITEM HISTORY
@@ -425,10 +429,11 @@ async def download_all(
             raise
 
         elapsed = time.time() - start_time
+        remaining_files = progress["total"] - progress["downloaded"]
         if progress["downloaded"] > 0:
-            rate = elapsed / progress["downloaded"]  # sec par fichier
-            remaining = rate * (progress["total"] - progress["downloaded"])
-            progress["eta"] = round(remaining)
+            rate_per_file = elapsed / progress["downloaded"]
+            eta_seconds = rate_per_file * remaining_files
+            progress["eta"] = format_eta(eta_seconds)
         else:
             progress["eta"] = None
         if success:
@@ -440,7 +445,7 @@ async def download_all(
 
         elapsed = time.time() - start_time
         mb_per_sec = (stats.mb) / elapsed if elapsed > 0 else 0
-        #rogress_bar.set_postfix({"MB/s": f"{mb_per_sec:.2f}"}, refresh=False)
+        #progress_bar.set_postfix({"MB/s": f"{mb_per_sec:.2f}"}, refresh=False)
         #progress_bar.update(1)
 
     try:

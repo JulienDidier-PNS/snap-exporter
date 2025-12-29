@@ -38,6 +38,8 @@ export default function ProgressBar() {
                                 : ""}
             </p>
 
+            <p>Temps restant ~{progress.eta}</p>
+
             <div className="mb-2 text-sm text-gray-600">
                 {progress.downloaded} / {progress.total} — {percent}%
             </div>

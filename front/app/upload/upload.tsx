@@ -106,7 +106,7 @@ export default function UploadForm() {
                         : "Choisir un dossier"}
                 </button>
                 {isPickup() && (
-                    <div className={"flex"}>
+                    <div className={"flex w-full"}>
                         <input
                             type="file"
                             accept=".json"

@@ -6,6 +6,7 @@ export interface ProgressDTO {
     status: "idle" | "running" | "done" | "paused";
     downloaded: number;
     total: number;
+    eta: string;
 }
 
 interface ProgressContextType {
@@ -20,6 +21,7 @@ export const ProgressProvider = ({ children }: { children: React.ReactNode }) =>
         status: "idle",
         downloaded: 0,
         total: 0,
+        eta: "",
     });
 
     return (

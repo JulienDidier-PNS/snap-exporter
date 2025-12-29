@@ -6,7 +6,7 @@ import {ProgressProvider} from "@/app/upload/progressContext";
 export default function Home(){
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl h-full max-h-11/12 flex-col items-center justify-between rounded-4xl py-16 px-16 bg-white dark:bg-blue-950">
+      <main className="flex min-h-screen w-full max-w-3xl h-full max-h-11/12 flex-col items-center justify-between rounded-4xl py-16 px-16 bg-white ">
           <div className={"flex flex-col items-center justify-center w-full max-h-11/12 lg:w-auto"}>
               <h1 className="text-4xl font-bold text-black">SnapExporter</h1>
               <Image
