@@ -2,14 +2,9 @@
 
 import {useRef, useState} from "react";
 import ProgressBar from "@/app/upload/progressBar";
+import {useProgress} from "@/app/upload/progressContext";
 
 //TODO: GETTING PROGRESS STATUS TO UPDATE BTN BEHAVIOUR
-export interface ProgressDTO {
-    status: "idle" | "running" | "done" | "paused";
-    downloaded: number;
-    total: number;
-}
-
 declare global {
     interface Window {
         electron?: {
@@ -19,7 +14,9 @@ declare global {
 }
 
 export default function UploadForm() {
-    const [status, setStatus] = useState("idle");
+    //PARENT OBJ
+    const { progress, setProgress } = useProgress();
+
     const [outputPath, setOutputPath] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -47,22 +44,22 @@ export default function UploadForm() {
                 method: "POST",
                 body: formData,
             });
-            setStatus("running");
+            setProgress(p => ({ ...p, status: "running" }));
         }
     };
 
     const pause = async () => {
         await fetch("http://127.0.0.1:8000/pause", { method: "POST" });
-        setStatus("paused");
+        setProgress(p => ({ ...p, status: "paused" }));
     };
 
     const resume = async () => {
-        if(status === "idle") {
-            handleUpload();
+        if(progress.status === "idle") {
+            await handleUpload();
         }
         else{
             await fetch("http://127.0.0.1:8000/resume", { method: "POST" });
-            setStatus("running");
+            setProgress(p => ({ ...p, status: "running" }));
         }
     };
 
@@ -140,14 +137,14 @@ export default function UploadForm() {
                         <div className="flex gap-2 w-full justify-around">
                             <button
                                 onClick={resume}
-                                disabled={!isPickup() || !isJsonSelected() || status === "running" || status === "done"}
+                                disabled={!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done"}
                                 className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
                             >
-                                {status === "idle" ? "Télécharger" : "Reprendre"}
+                                {progress.status === "idle" ? "Télécharger" : "Reprendre"}
                             </button>
                             <button
                                 onClick={pause}
-                                disabled={status !== "running" || status === "done"}
+                                disabled={progress.status !== "running" || progress.status === "done"}
                                 className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50"
                             >
                                 Pause

@@ -1,25 +1,14 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-interface ProgressDTO {
-    status: "idle" | "running" | "done" | "paused";
-    downloaded: number;
-    total: number;
-}
+import {useEffect} from "react";
+import {useProgress} from "@/app/upload/progressContext";
 
 export default function ProgressBar() {
-    const [progress, setProgress] = useState<ProgressDTO>({
-        status: "idle",
-        downloaded: 0,
-        total: 0,
-    });
+    const { progress, setProgress } = useProgress();
 
     useEffect(() => {
         const es = new EventSource("http://127.0.0.1:8000/progress/stream");
 
         es.onmessage = (event) => {
-            const data = JSON.parse(event.data) as ProgressDTO;
+            const data = JSON.parse(event.data);
             setProgress(data);
 
             if (data.status === "done") {
@@ -27,13 +16,8 @@ export default function ProgressBar() {
             }
         };
 
-        es.onerror = () => {
-            console.warn("SSE disconnected");
-            es.close();
-        };
-
         return () => es.close();
-    }, []);
+    }, [setProgress]);
 
     const percent =
         progress.total > 0
@@ -41,20 +25,24 @@ export default function ProgressBar() {
             : 0;
 
     return (
-        <div className="w-full mt-4 bg-amber-50 rounded-lg p-2">
-            <p>
-                {
-                    progress.status === "running" ? "Export en cours" :
-                        progress.status === "idle" ? "En attente" :
-                            progress.status === "paused" ? "Export en pause":
-                                progress.status === "done" ? "Export terminé" : ""
-                }
+        <div className="w-full mt-4 bg-amber-50 rounded-lg p-4">
+            <p className="mb-1 font-medium">
+                {progress.status === "running"
+                    ? "Export en cours"
+                    : progress.status === "idle"
+                        ? "En attente"
+                        : progress.status === "paused"
+                            ? "Export en pause"
+                            : progress.status === "done"
+                                ? "Export terminé"
+                                : ""}
             </p>
-            <div className="mb-1 text-sm text-gray-600 dark:text-gray-300">
+
+            <div className="mb-2 text-sm text-gray-600">
                 {progress.downloaded} / {progress.total} — {percent}%
             </div>
 
-            <div className="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+            <div className="h-3 w-full bg-gray-200 rounded overflow-hidden">
                 <div
                     className="h-full bg-blue-500 transition-all duration-500 ease-out"
                     style={{ width: `${percent}%` }}
@@ -67,4 +55,3 @@ export default function ProgressBar() {
         </div>
     );
 }
-

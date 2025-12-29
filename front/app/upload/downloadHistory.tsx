@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react";
+import {useProgress} from "@/app/upload/progressContext";
 
 export interface DownloadedItemDTO {
     filename: string;
@@ -16,6 +17,8 @@ export interface DownloadsPageDTO {
 }
 
 export default function DownloadHistory() {
+    const { progress } = useProgress();
+
     const [downloadedItems, setDownloadedItems] = useState<DownloadedItemDTO[]>([]);
     const totalPerPage = 20;
     const [currentPage, setCurrentPage] = useState(0);
@@ -88,88 +91,93 @@ export default function DownloadHistory() {
 
     return (
         <>
-            <div className="download-history">
-                <button
-                    onClick={() => setOpenHisto(!openHisto)}
-                    className="mb-2 font-bold"
-                >
-                    {openHisto ? "⬇️ Cacher l'historique" : "➡️ Voir l'historique"}
-                </button>
+        {
+            progress.status !== "idle" && (
+                <>
+                    <div className="download-history">
+                        <button
+                            onClick={() => setOpenHisto(!openHisto)}
+                            className="mb-2 font-bold"
+                        >
+                            {openHisto ? "⬇️ Cacher l'historique" : "➡️ Voir l'historique"}
+                        </button>
 
-                <div
-                    ref={contentRefHisto}
-                    className={`overflow-hidden transition-all duration-500 ease-in-out`}
-                    style={{
-                        height: openHisto ? contentRefHisto.current?.scrollHeight : 0,
-                        opacity: openHisto ? 1 : 0,
-                    }}
-                >
-                    <div className={"histo-container"}>
-                        <ul className="text-sm histo-list">
-                            {downloadedItems.map((item, i) => (
-                                <li key={i}>
-                                    {item.media_type === "image" ? "🖼️" : "🎬"}{" "}
-                                    {item.filename} —{" "}
-                                    {new Date(item.date).toLocaleString()}
-                                </li>
-                            ))}
-                        </ul>
+                        <div
+                            ref={contentRefHisto}
+                            className={`overflow-hidden transition-all duration-500 ease-in-out`}
+                            style={{
+                                height: openHisto ? contentRefHisto.current?.scrollHeight : 0,
+                                opacity: openHisto ? 1 : 0,
+                            }}
+                        >
+                            <div className={"histo-container"}>
+                                <ul className="text-sm histo-list">
+                                    {downloadedItems.map((item, i) => (
+                                        <li key={i}>
+                                            {item.media_type === "image" ? "🖼️" : "🎬"}{" "}
+                                            {item.filename} —{" "}
+                                            {new Date(item.date).toLocaleString()}
+                                        </li>
+                                    ))}
+                                </ul>
 
-                        <div className={"histo-btn flex gap-2 mt-4"}>
-                            <button
-                                disabled={currentPage === 0}
-                                onClick={() => loadPage(currentPage - 1)}
-                            >
-                                ⬅️
-                            </button>
-
-                            {pagesToShow().map((p, i) =>
-                                p === "..." ? (
-                                    <span key={i}>...</span>
-                                ) : (
+                                <div className={"histo-btn flex gap-2 mt-4"}>
                                     <button
-                                        key={i}
-                                        className={p === currentPage ? "font-bold underline" : ""}
-                                        onClick={() => loadPage(p as number)}
+                                        disabled={currentPage === 0}
+                                        onClick={() => loadPage(currentPage - 1)}
                                     >
-                                        {p + 1}
+                                        ⬅️
                                     </button>
-                                )
-                            )}
 
-                            <button
-                                disabled={currentPage + 1 >= totalPages}
-                                onClick={() => loadPage(currentPage + 1)}
-                            >
-                                ➡️
-                            </button>
+                                    {pagesToShow().map((p, i) =>
+                                        p === "..." ? (
+                                            <span key={i}>...</span>
+                                        ) : (
+                                            <button
+                                                key={i}
+                                                className={p === currentPage ? "font-bold underline" : ""}
+                                                onClick={() => loadPage(p as number)}
+                                            >
+                                                {p + 1}
+                                            </button>
+                                        )
+                                    )}
+
+                                    <button
+                                        disabled={currentPage + 1 >= totalPages}
+                                        onClick={() => loadPage(currentPage + 1)}
+                                    >
+                                        ➡️
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div className="files-error-container">
-                <button
-                    onClick={() => setOpenErrorFiles(!openErrorFiles)}
-                    className="mb-2 font-bold"
-                >
-                    {openErrorFiles ? "⬇️ Cacher" : "➡️ Voir les fichiers en erreur"}
-                </button>
-                <div
-                    ref={contentRefErrorFiles}
-                    className={`overflow-hidden transition-all duration-500 ease-in-out files-error-list`}
-                    style={{
-                        height: openErrorFiles ? contentRefErrorFiles.current?.scrollHeight : 0,
-                        opacity: openErrorFiles ? 1 : 0,
-                    }}
-                >
-                    {errorFiles.map((item, i) => (
-                        <li key={i}>
-                            {item}
-                        </li>
-                    ))}
-                </div>
-            </div>
+                    <div className="files-error-container">
+                        <button
+                            onClick={() => setOpenErrorFiles(!openErrorFiles)}
+                            className="mb-2 font-bold">
+                            {openErrorFiles ? "⬇️ Cacher" : "➡️ Voir les fichiers en erreur"}
+                        </button>
+                        <div
+                            ref={contentRefErrorFiles}
+                            className={`overflow-hidden transition-all duration-500 ease-in-out files-error-list`}
+                            style={{
+                                height: openErrorFiles ? contentRefErrorFiles.current?.scrollHeight : 0,
+                                opacity: openErrorFiles ? 1 : 0,
+                            }}
+                        >
+                            {errorFiles.map((item, i) => (
+                                <li key={i}>
+                                    {item}
+                                </li>
+                            ))}
+                        </div>
+                    </div>
+                </>
+            )
+        }
         </>
-    );
+    )
 }
