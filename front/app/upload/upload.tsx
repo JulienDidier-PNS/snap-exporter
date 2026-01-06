@@ -70,11 +70,8 @@ export default function UploadForm() {
             body: new FormData(),
         });
         setJsonExportFile(null);
-        setOutputPath(null);
+        setOutputPath("");
     };
-
-
-
 
     const isPickup = () => {
         return outputPath != null && outputPath != "";

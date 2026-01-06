@@ -139,7 +139,7 @@ export default function DownloadHistory() {
                                                 className={`${p === currentPage ? "font-bold underline" : ""} cursor-pointer`}
                                                 onClick={() => loadPage(p as number)}
                                             >
-                                                {p + 1}
+                                                {Number(p) + 1}
                                             </button>
                                         )
                                     )}
