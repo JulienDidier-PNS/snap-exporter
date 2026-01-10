@@ -52,7 +52,7 @@ app.add_middleware(
 async def startup():
     app.state.downloaded_items = []
     app.state.downloaded_items_lock = asyncio.Lock()
-    app.state.failed_items = []  # Exemple initial
+    app.state.failed_items = {}  # {filename: reason}
     app.state.failed_items_lock = asyncio.Lock()
 
 
@@ -82,7 +82,7 @@ async def progress_stream(request: Request):
                     break
 
                 progress = service_get_progress()
-                payload = json.dumps(service_get_progress())
+                payload = json.dumps(progress)
                 yield f"data: {payload}\n\n"
                 await asyncio.sleep(0.5)
 
@@ -109,8 +109,9 @@ async def error_stream(request: Request):
                 if await request.is_disconnected():
                     break
 
-                errorList = get_error_list(app.state)
-                payload = json.dumps(errorList)
+                async with app.state.failed_items_lock:
+                    errorDict = dict(app.state.failed_items)
+                payload = json.dumps(errorDict)
                 yield f"data: {payload}\n\n"
                 await asyncio.sleep(5.0)
 
@@ -276,6 +277,9 @@ async def restart(output_path: str | None = Form(None)):
 if __name__ == "__main__":
     import uvicorn
     import argparse
+    import multiprocessing
+
+    multiprocessing.freeze_support()
 
     parser = argparse.ArgumentParser(description="SnapExporter Backend")
     parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")

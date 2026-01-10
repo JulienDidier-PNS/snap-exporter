@@ -27,7 +27,7 @@ export default function DownloadHistory() {
     const [openHisto, setOpenHisto] = useState(false);
     const [openErrorFiles, setOpenErrorFiles] = useState(false);
 
-    const [errorFiles, setErrorFiles] = useState<string[]>([]);
+    const [errorFiles, setErrorFiles] = useState<Record<string, string>>({});
 
     const contentRefHisto = useRef<HTMLDivElement>(null);
     const contentRefErrorFiles = useRef<HTMLDivElement>(null);
@@ -37,7 +37,7 @@ export default function DownloadHistory() {
         const es = new EventSource(`${backendUrl}/file/error/stream`);
 
         es.onmessage = (event) => {
-            const data = JSON.parse(event.data) as string[];
+            const data = JSON.parse(event.data) as Record<string, string>;
             setErrorFiles(data);
         };
 
@@ -171,11 +171,14 @@ export default function DownloadHistory() {
                                 opacity: openErrorFiles ? 1 : 0,
                             }}
                         >
-                            {errorFiles.map((item, i) => (
-                                <li key={i}>
-                                    {item}
-                                </li>
-                            ))}
+                            <ul className="text-sm list-disc pl-5">
+                                {Object.entries(errorFiles).map(([filename, reason], i) => (
+                                    <li key={i} className="mb-1">
+                                        <span className="font-semibold text-red-600">{filename}</span>: 
+                                        <span className="text-gray-600 ml-1 italic">{reason}</span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </>

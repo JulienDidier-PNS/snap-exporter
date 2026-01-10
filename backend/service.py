@@ -164,7 +164,7 @@ def add_exif_data(image_path: Path, memory: Memory):
     except Exception as e:
         print(f"Failed to set EXIF data for {image_path.name}: {e}")
 
-async def set_video_metadata(video_path: Path, memory: Memory):
+async def set_video_metadata(video_path: Path, memory: Memory, state=None):
     """
     Sets video creation time and Apple Photos-compatible GPS metadata.
     Uses ffmpeg via subprocess to inject metadata without re-encoding.
@@ -218,11 +218,12 @@ async def set_video_metadata(video_path: Path, memory: Memory):
         os.utime(video_path, (memory.date.timestamp(), memory.date.timestamp()))
 
     except Exception as e:
-        print(f"Failed to set video metadata for {video_path.name}: {e}")
-        # Ajouter à la liste des fichiers échoués
+        error_msg = str(e)
+        print(f"Failed to set video metadata for {video_path.name}: {error_msg}")
+        # Ajouter à la liste des fichiers échoués avec la raison
         if state is not None:
             async with state.failed_items_lock:
-                state.failed_items.append(memory.filename)
+                state.failed_items[memory.filename] = f"Erreur métadonnées vidéo: {error_msg}"
 
 def detect_image_ext(data: bytes) -> str:
     if data.startswith(b"\x89PNG"):
@@ -355,7 +356,7 @@ async def download_memory(
                 if memory.media_type.lower() == "image":
                     await run_blocking(add_exif_data, output_path, memory)
                 elif memory.media_type.lower() == "video":
-                    await set_video_metadata(output_path, memory)
+                    await set_video_metadata(output_path, memory, state)
 
             async with state.downloaded_items_lock:
                 state.downloaded_items.append(
@@ -369,12 +370,13 @@ async def download_memory(
             return True, bytes_downloaded
 
         except Exception as e:
-            print(f"\nError downloading {memory.filename}: {e}")
+            error_msg = str(e)
+            print(f"\nError downloading {memory.filename}: {error_msg}")
 
-            # Ajouter à la liste des fichiers échoués
+            # Ajouter à la liste des fichiers échoués avec la raison
             if state is not None:
                 async with state.failed_items_lock:
-                    state.failed_items.append(memory.filename)
+                    state.failed_items[memory.filename] = error_msg
 
             return False, 0
 
@@ -396,6 +398,11 @@ async def download_all(
         output_path = output_dir / memory.filename
         if skip_existing and output_path.exists():
             stats.skipped += 1
+            # S'assurer qu'il n'est pas dans les erreurs s'il existe déjà
+            if state is not None:
+                async with state.failed_items_lock:
+                    if memory.filename in state.failed_items:
+                        del state.failed_items[memory.filename]
         else:
             to_download.append(memory)
 
@@ -439,6 +446,11 @@ async def download_all(
         if success:
             stats.downloaded += 1
             progress["downloaded"]+=1
+            # S'assurer qu'il n'est pas dans les erreurs s'il a réussi finalement (retry implicite ou autre)
+            if state is not None:
+                async with state.failed_items_lock:
+                    if memory.filename in state.failed_items:
+                        del state.failed_items[memory.filename]
         else:
             stats.failed += 1
         stats.mb += bytes_downloaded / 1024 / 1024
