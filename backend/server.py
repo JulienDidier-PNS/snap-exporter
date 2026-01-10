@@ -129,6 +129,10 @@ async def error_stream(request: Request):
         },
     )
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 
 # --- Endpoints ---
 @app.post("/run")
@@ -271,14 +275,19 @@ async def restart(output_path: str | None = Form(None)):
 # --- ENTRY POINT ---
 if __name__ == "__main__":
     import uvicorn
+    import argparse
+
+    parser = argparse.ArgumentParser(description="SnapExporter Backend")
+    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on")
+    args = parser.parse_args()
 
     logging.basicConfig(level=logging.WARNING)
-    print("Starting FastAPI server...", flush=True)
+    print(f"Starting FastAPI server on port {args.port}...", flush=True)
 
     uvicorn.run(
         app,
         host="127.0.0.1",
-        port=8000,
+        port=args.port,
         log_level="warning",
         reload=False
     )

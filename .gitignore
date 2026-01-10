@@ -22,3 +22,9 @@ front/dist/
 backend/dist/
 
 backend/snap-exporter-backend.spec
+
+.output.txt
+
+package-lock.json
+
+dist-electron/

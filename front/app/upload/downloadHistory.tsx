@@ -17,7 +17,7 @@ export interface DownloadsPageDTO {
 }
 
 export default function DownloadHistory() {
-    const { progress } = useProgress();
+    const { progress, backendUrl } = useProgress();
 
     const [downloadedItems, setDownloadedItems] = useState<DownloadedItemDTO[]>([]);
     const totalPerPage = 20;
@@ -33,7 +33,8 @@ export default function DownloadHistory() {
     const contentRefErrorFiles = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const es = new EventSource("http://127.0.0.1:8000/file/error/stream");
+        if (!backendUrl) return;
+        const es = new EventSource(`${backendUrl}/file/error/stream`);
 
         es.onmessage = (event) => {
             const data = JSON.parse(event.data) as string[];
@@ -46,11 +47,11 @@ export default function DownloadHistory() {
         };
 
         return () => es.close();
-    }, []);
+    }, [backendUrl]);
 
     async function fetchDownloads(offset = 0, limit = 20) {
         const res = await fetch(
-            `http://127.0.0.1:8000/downloads?offset=${offset}&limit=${limit}`
+            `${backendUrl}/downloads?offset=${offset}&limit=${limit}`
         );
         return (await res.json()) as DownloadsPageDTO;
     }

@@ -9,13 +9,14 @@ declare global {
     interface Window {
         electron?: {
             selectFolder: () => Promise<string | null>;
+            getBackendPort: () => Promise<number>;
         };
     }
 }
 
 export default function UploadForm() {
     //PARENT OBJ
-    const { progress, setProgress } = useProgress();
+    const { progress, setProgress, backendUrl } = useProgress();
 
     const [outputPath, setOutputPath] = useState("");
 
@@ -40,7 +41,7 @@ export default function UploadForm() {
             formData.append("file", jsonExportFile);
             formData.append("output_path", outputPath);
 
-            await fetch("http://127.0.0.1:8000/run", {
+            await fetch(`${backendUrl}/run`, {
                 method: "POST",
                 body: formData,
             });
@@ -49,7 +50,7 @@ export default function UploadForm() {
     };
 
     const pause = async () => {
-        await fetch("http://127.0.0.1:8000/pause", { method: "POST" });
+        await fetch(`${backendUrl}/pause`, { method: "POST" });
         setProgress(p => ({ ...p, status: "paused" }));
     };
 
@@ -58,14 +59,14 @@ export default function UploadForm() {
             await handleUpload();
         }
         else{
-            await fetch("http://127.0.0.1:8000/resume", { method: "POST" });
+            await fetch(`${backendUrl}/resume`, { method: "POST" });
             setProgress(p => ({ ...p, status: "running" }));
         }
     };
 
     const [openRestartModal, setOpenRestartModal] = useState(false);
     const restart = async () => {
-        await fetch("http://127.0.0.1:8000/restart", {
+        await fetch(`${backendUrl}/restart`, {
             method: "POST",
             body: new FormData(),
         });

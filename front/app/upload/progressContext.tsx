@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 export interface ProgressDTO {
     status: "idle" | "running" | "done" | "paused";
@@ -12,6 +12,7 @@ export interface ProgressDTO {
 interface ProgressContextType {
     progress: ProgressDTO;
     setProgress: React.Dispatch<React.SetStateAction<ProgressDTO>>;
+    backendUrl: string;
 }
 
 const ProgressContext = createContext<ProgressContextType | null>(null);
@@ -24,8 +25,18 @@ export const ProgressProvider = ({ children }: { children: React.ReactNode }) =>
         eta: "",
     });
 
+    const [backendUrl, setBackendUrl] = useState("http://127.0.0.1:8000");
+
+    useEffect(() => {
+        if (window.electron && window.electron.getBackendPort) {
+            window.electron.getBackendPort().then((port: number) => {
+                setBackendUrl(`http://127.0.0.1:${port}`);
+            });
+        }
+    }, []);
+
     return (
-        <ProgressContext.Provider value={{ progress, setProgress }}>
+        <ProgressContext.Provider value={{ progress, setProgress, backendUrl }}>
             {children}
         </ProgressContext.Provider>
     );

@@ -2,10 +2,11 @@ import {useEffect} from "react";
 import {useProgress} from "@/app/upload/progressContext";
 
 export default function ProgressBar() {
-    const { progress, setProgress } = useProgress();
+    const { progress, setProgress, backendUrl } = useProgress();
 
     useEffect(() => {
-        const es = new EventSource("http://127.0.0.1:8000/progress/stream");
+        if (!backendUrl) return;
+        const es = new EventSource(`${backendUrl}/progress/stream`);
 
         es.onmessage = (event) => {
             const data = JSON.parse(event.data);
