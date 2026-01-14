@@ -52,7 +52,7 @@ async function createWindow() {
     try {
         if (!loadURL) await servePromise;
         await loadURL(mainWindow);
-        mainWindow.webContents.openDevTools();
+        //mainWindow.webContents.openDevTools();
     } catch (err) {
         console.error("Failed to load frontend:", err);
     }
