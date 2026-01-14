@@ -1,8 +1,45 @@
 "use client";
 
-import {useRef, useState} from "react";
+import {useRef, useState, useEffect} from "react";
 import ProgressBar from "@/app/upload/progressBar";
 import {useProgress} from "@/app/upload/progressContext";
+
+function InfoTooltip({ text }: { text: string }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative inline-block ml-2 group/tooltip" ref={tooltipRef}>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setIsOpen(!isOpen);
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 text-white text-xs font-bold transition-all border border-white/20 group-hover/tooltip:border-white/40"
+                title="Plus d'informations"
+            >
+                i
+            </button>
+            {isOpen && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-zinc-900 text-white text-xs rounded-lg shadow-2xl z-[60] border border-white/10 animate-in fade-in zoom-in duration-200">
+                    <p className="leading-relaxed">{text}</p>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-900"></div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 declare global {
     interface Window {
@@ -93,23 +130,34 @@ export default function UploadForm() {
     return (
         <>
             <div className="p-4 flex flex-col gap-4 items-center w-full">
-            <div className={"flex flex-row gap-4 w-full justify-center p-4 custom-bg-blue rounded-lg"}>
-                <button
-                    onClick={pickFolder}
-                    onMouseEnter={() => setHoverFolder(true)}
-                    onMouseLeave={() => setHoverFolder(false)}
-                    className={`px-4 py-2 rounded text-white items-center max-w-1/2 btn
-                    ${isPickup() ? "btn-ok" : "btn-todo"}
-                `}
-                >
-                    {isPickup()
-                        ? hoverFolder
-                            ? "Changer le dossier de sortie 🔍"
-                            : "Sélectionné ✅"
-                        : "Dossier de sortie"}
-                </button>
+            <div className={"flex flex-row gap-4 w-full justify-center p-4 custom-bg-blue rounded-lg items-stretch"}>
+                <div className="flex flex-1 items-center">
+                    <button
+                        onClick={pickFolder}
+                        onMouseEnter={() => setHoverFolder(true)}
+                        onMouseLeave={() => setHoverFolder(false)}
+                        className={`px-4 py-2 rounded text-white flex items-center justify-center gap-2 btn min-h-[44px] w-full
+                        ${isPickup() ? "btn-ok" : "btn-todo"}
+                    `}
+                    >
+                        <span className="flex-1 text-center grid">
+                            {/* Texte invisible pour réserver l'espace le plus large et éviter le flickering */}
+                            <span className="invisible px-4 row-start-1 col-start-1">
+                                {isPickup() ? "Changer le dossier 🔍" : "Dossier de sortie"}
+                            </span>
+                            <span className="row-start-1 col-start-1 flex items-center justify-center">
+                                {isPickup()
+                                    ? hoverFolder
+                                        ? "Changer le dossier 🔍"
+                                        : "Dossier ✅"
+                                    : "Dossier de sortie"}
+                            </span>
+                        </span>
+                        <InfoTooltip text="Choisissez l'endroit où vos souvenirs seront téléchargés sur votre ordinateur." />
+                    </button>
+                </div>
                 {isPickup() && (
-                    <div className={"flex w-full"}>
+                    <div className={"flex flex-1 items-center"}>
                         <input
                             type="file"
                             accept=".json"
@@ -127,16 +175,25 @@ export default function UploadForm() {
                             onMouseLeave={() => setHoverJson(false)}
                             disabled={outputPath == null || outputPath === ""}
                             onClick={() => fileInputRef.current?.click()}
-                            className={`px-4 py-2 rounded text-white w-full btn
+                            className={`px-4 py-2 rounded text-white w-full flex items-center justify-center gap-2 btn min-h-[44px]
                         ${!isPickup() ? "btn-disabled" : isJsonSelected() ? "btn-ok" : "btn-todo"}`
                             }
                         >
-                            { isJsonSelected() && isPickup() ?
-                                hoverJson ? "" +
-                                    "J'ai un autre fichier 🔍" :
-                                    "Fichier Snachat sélectionné ✅" :
-                                "Sélectionner le fichier snapchat (.json)"
-                            }
+                            <span className="flex-1 text-center grid">
+                                {/* Texte invisible pour réserver l'espace le plus large et éviter le flickering */}
+                                <span className="invisible px-4 row-start-1 col-start-1">
+                                    {isJsonSelected() ? "J'ai un autre fichier 🔍" : "Sélectionner le fichier snapchat (.json)"}
+                                </span>
+                                <span className="row-start-1 col-start-1 flex items-center justify-center">
+                                    { isJsonSelected() && isPickup() ?
+                                        hoverJson ?
+                                            "J'ai un autre fichier 🔍" :
+                                            "Export ✅" :
+                                        "Sélectionner le fichier snapchat (.json)"
+                                    }
+                                </span>
+                            </span>
+                            <InfoTooltip text="Sélectionnez le fichier 'memories_history.json' que vous avez extrait de votre archive Snapchat." />
                         </button>
                     </div>
                 )}
@@ -163,6 +220,7 @@ export default function UploadForm() {
                             <label htmlFor="mergeOverlay" className="text-sm text-white font-medium cursor-pointer">
                                 Fusionner les Overlays (Texte/Filtres Snapchat)
                             </label>
+                            <InfoTooltip text="Le format par défaut d'export de snapchat sépare les textes des médias. Sélectioner cette option fusionnera les fichiers concernés pour obtenir un seul et même fichier." />
                         </div>
                         <div className="flex gap-2 w-full justify-around">
                             <button
