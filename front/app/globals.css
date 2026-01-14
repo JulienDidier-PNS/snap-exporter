@@ -14,24 +14,24 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f0f12; /* Un peu plus clair que Zinc-950 (#09090b) */
+    --foreground: #f4f4f5; /* Zinc-100 */
   }
 }
 
 body {
   background: var(--background);
+  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .custom-bg-blue{
-  background-color: #0057a4;
+  @apply bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/50 shadow-sm;
 }
 
 #startImportBtn:disabled{
-  background: grey;
-  color: white;
-  cursor: not-allowed;
+  @apply bg-zinc-200 text-zinc-400 cursor-not-allowed border-zinc-200;
 }
 
 /* DOWNLOAD DIV */
@@ -40,98 +40,64 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: 30rem;
+  width: 100%;
+  max-width: 32rem;
 }
 
 .histo-container{
-  background-color: #0057a4;
-  border: 1px solid var(--foreground);
+  @apply bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-inner mt-4;
 }
+
 .histo-list{
   display: flex;
   flex-direction: column;
-
   padding: 1rem;
-
-  align-items: center;
-  justify-content: center;
-
+  align-items: flex-start;
   height: 15rem;
-
   scroll-behavior: smooth;
-  overflow-y: scroll;
-
-  color: #0a0a0a;
+  overflow-y: auto;
+  @apply text-zinc-900 dark:text-zinc-100;
 }
 
 .histo-list li{
-  margin: 0.5rem;
+  @apply py-2 px-3 mb-2 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-100 dark:border-zinc-700 w-full shadow-sm text-xs flex items-center gap-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-500;
 }
 
 .histo-btn{
   display: flex;
   flex-direction: row;
-
-  justify-content: space-between;
-
+  justify-content: center;
+  align-items: center;
   border: none;
+  @apply p-4 bg-zinc-100/50 dark:bg-zinc-800/50 border-t border-zinc-200 dark:border-zinc-700;
 }
 
 /* BTN STYLES */
 .btn{
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  cursor: pointer;
-  width: 100%;
+  @apply flex flex-row justify-center items-center cursor-pointer w-full transition-all duration-200 font-medium rounded-xl shadow-sm;
 }
 
 .btn-todo{
-  background-color: royalblue;
-  border: 1px solid white;
-}
-
-.btn-todo:hover{
-  background-color: royalblue;
-  border: 1px solid white;
-  scale: 110%;
+  @apply bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 border border-transparent;
 }
 
 .btn-ok{
-  background-color: forestgreen;
-  border: 1px solid white;
+  @apply bg-emerald-500 text-white hover:bg-emerald-600 border border-emerald-400/20;
 }
 
 .btn-disabled{
-  background-color: lightgray;
-  border: 1px solid white;
-  cursor: not-allowed;
-  opacity: 0.5;
+  @apply bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200 opacity-50;
 }
 
 /* ERROR CONTAINER */
 .files-error-container{
   display: flex;
   flex-direction: column;
-
   width: 100%;
-  max-height: 20rem;
-
-  margin: 1rem 0;
-
-  justify-content: center;
-
-  overflow-y: scroll;
+  max-width: 32rem;
+  margin-top: 1.5rem;
 }
 
 .files-error-list{
-  display: flex;
-  flex-direction: column;
-
-  width: 100%;
-  max-height: 20rem;
-
-  align-items: center;
-
-  overflow-y: scroll;
+  @apply bg-red-50/50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-4 mt-2 overflow-y-auto max-h-60;
 }
