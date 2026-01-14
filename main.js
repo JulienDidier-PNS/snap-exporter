@@ -97,7 +97,9 @@ app.whenReady().then(async () => {
 
         console.log(`Starting backend at: ${backendPath}`);
         
-        backendProcess = spawn(backendPath, ['--port', backendPort.toString()]);
+        backendProcess = spawn(backendPath, ['--port', backendPort.toString()], {
+            detached: process.platform !== 'win32'
+        });
 
         backendProcess.stdout.on('data', (data) => {
             console.log(`Python: ${data}`);
@@ -118,13 +120,36 @@ app.whenReady().then(async () => {
     createWindow();
 });
 
-app.on('window-all-closed', () => {
+function killBackend() {
     if (backendProcess) {
-        backendProcess.kill();
+        console.log('Killing backend process...');
+        try {
+            if (process.platform === 'win32') {
+                spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t']);
+            } else {
+                // Kill the entire process group
+                try {
+                    process.kill(-backendProcess.pid, 'SIGTERM');
+                } catch (e) {
+                    // Fallback if pgid kill fails
+                    backendProcess.kill('SIGTERM');
+                }
+            }
+        } catch (err) {
+            console.error('Error during backend process termination:', err);
+        }
+        backendProcess = null;
     }
+}
+
+app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
+});
+
+app.on('will-quit', () => {
+    killBackend();
 });
 
 app.on('activate', () => {
