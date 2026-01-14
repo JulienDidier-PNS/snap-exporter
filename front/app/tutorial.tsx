@@ -18,6 +18,8 @@ interface Step {
   secondaryImage?: string;
   links?: { label: string; url: string }[];
   items?: string[];
+  nextLabel?: string;
+  prevLabel?: string;
 }
 
 const steps: Step[] = [
@@ -25,18 +27,20 @@ const steps: Step[] = [
     title: "Bienvenue sur SnapExporter",
     description: "L'outil simple pour exporter vos souvenirs Snapchat en un clic.",
     image: "/snap-logo.png",
+    nextLabel: "C'est parti !",
   },
   {
     title: "Exportez vos données Snapchat",
-    description: "Pour utiliser l'application, vous allez devoir demander vos données Snapchat sur le site de Snapchat.",
+    description: "Pour utiliser l'application, vous allez devoir demander vos données sur le site de Snapchat.",
     icon: "📂",
-    secondaryImage: "",
+    secondaryImage: "/tutorials/cal_selection.png",
     links: [
       { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ]
+    ],
+    nextLabel: "Continuer",
   },
   {
-    title: "Quelles informations je dois exporter ? - 1",
+    title: "1 - Quelles informations je dois exporter ?",
     description: "Vous devez exporter les informations suivantes :",
     items: [
       "Exporter mes souvenirs",
@@ -46,38 +50,52 @@ const steps: Step[] = [
     secondaryImage: "/tutorials/wich_choose.png",
     links: [
       { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ]
+    ],
+    nextLabel: "Continuer",
   },
   {
-    title: "Quelles informations je dois exporter ? - 2",
+    title: "2 - Quelles informations je dois exporter ?",
     description: "Une fois les options sélectionnées, choisissez 'depuis toujours' pour exporter TOUT vos memories.",
     items: [],
     icon: "📋",
     secondaryImage: "/tutorials/cal_selection.png",
     links: [
       { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ]
+    ],
+    nextLabel: "Compris !",
   },
   {
     title: "Et après ?",
     description: "Une fois l'adresse email renseignée, attendez quelques minutes ⏱️ Vous recevrez un email lorsque l'export sera terminé.",
     icon: "⏱️",
+    nextLabel: "J'ai reçu le mail !",
   },
   {
     title: "J'ai reçu le mail !",
     description: "Super ! Il ne vous reste plus qu'à :",
     items: [
-        "Télécharger le fichier généré par Snapchat",
-        "Extraire le contenu du fichier zip",
-        "Garder le fichier 'memories_history.json' dans le dossier 'json'"
+      "Télécharger le fichier généré par Snapchat",
+      "Extraire le contenu du fichier zip",
+      "Garder le fichier 'memories_history.json' dans le dossier 'json'"
     ],
     icon: "📬",
     secondaryImage: "/tutorials/zip_extract.png",
+    nextLabel: "Terminer la configuration",
   },
 ];
 
 export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+  const handleLinkClick = (e: React.MouseEvent, url: string) => {
+    e.preventDefault();
+    if (typeof window !== 'undefined' && window.electron && window.electron.openExternal) {
+      window.electron.openExternal(url);
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   const closeTutorial = () => {
     onComplete();
@@ -101,6 +119,31 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white p-8 font-sans relative">
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 cursor-zoom-out"
+          onClick={() => setZoomedImage(null)}
+        >
+          <button 
+            className="absolute top-8 right-8 text-white hover:text-gray-300 transition-colors p-2"
+            onClick={() => setZoomedImage(null)}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <div className="relative w-full h-full flex items-center justify-center">
+            <Image 
+              src={zoomedImage} 
+              alt="Image agrandie" 
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+      )}
       <button 
         onClick={closeTutorial}
         className="absolute top-8 right-8 text-gray-400 hover:text-black transition-colors p-2"
@@ -114,7 +157,12 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
       <div className="max-w-md w-full flex flex-col items-center text-center">
         <div className="h-48 flex items-center justify-center mb-8">
           {step.image ? (
-            <Image src={step.image} alt={step.title} width={200} height={200} priority />
+            <div 
+              className="cursor-zoom-in transition-transform hover:scale-105"
+              onClick={() => setZoomedImage(step.image!)}
+            >
+              <Image src={step.image} alt={step.title} width={200} height={200} priority />
+            </div>
           ) : (
             <span className="text-8xl">{step.icon}</span>
           )}
@@ -139,9 +187,8 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
               <a
                 key={index}
                 href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-yellow-600 hover:text-yellow-700 font-medium underline decoration-yellow-400/30 underline-offset-4"
+                onClick={(e) => handleLinkClick(e, link.url)}
+                className="text-yellow-600 hover:text-yellow-700 font-medium underline decoration-yellow-400/30 underline-offset-4 cursor-pointer"
               >
                 {link.label}
               </a>
@@ -150,7 +197,10 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
         )}
 
         {step.secondaryImage && (
-          <div className="mb-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+          <div 
+            className="mb-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm cursor-zoom-in transition-transform hover:scale-[1.02]"
+            onClick={() => setZoomedImage(step.secondaryImage!)}
+          >
             <Image 
               src={step.secondaryImage} 
               alt="Illustration secondaire" 
@@ -180,7 +230,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
               currentStep === 0 ? "invisible" : "text-gray-400 hover:text-black cursor-pointer"
             }`}
           >
-            Précédent
+            {step.prevLabel || "Précédent"}
           </button>
 
           <button
@@ -194,8 +244,8 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
             }`}
           >
             {currentStep === steps.length - 1 
-              ? (isBackendReady ? "Commencer" : "Initialisation...") 
-              : "Suivant"}
+              ? (step.nextLabel || (isBackendReady ? "Commencer" : "Initialisation...")) 
+              : (step.nextLabel || "Suivant")}
           </button>
         </div>
       </div>
