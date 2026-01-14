@@ -28,3 +28,5 @@ backend/snap-exporter-backend.spec
 package-lock.json
 
 dist-electron/
+
+all_compile.sh
