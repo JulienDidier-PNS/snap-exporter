@@ -104,9 +104,9 @@ export default function UploadForm() {
                 >
                     {isPickup()
                         ? hoverFolder
-                            ? "Changer de dossier 🔍"
+                            ? "Changer le dossier de sortie 🔍"
                             : "Sélectionné ✅"
-                        : "Choisir un dossier"}
+                        : "Dossier de sortie"}
                 </button>
                 {isPickup() && (
                     <div className={"flex w-full"}>
@@ -133,9 +133,9 @@ export default function UploadForm() {
                         >
                             { isJsonSelected() && isPickup() ?
                                 hoverJson ? "" +
-                                    "Changer de fichier 🔍" :
-                                    "Fichier sélectionné ✅" :
-                                "Sélectionner un fichier"
+                                    "J'ai un autre fichier 🔍" :
+                                    "Fichier Snachat sélectionné ✅" :
+                                "Sélectionner le fichier snapchat (.json)"
                             }
                         </button>
                     </div>
@@ -160,7 +160,7 @@ export default function UploadForm() {
                                 onChange={(e) => setMergeOverlay(e.target.checked)}
                                 className="w-4 h-4 cursor-pointer"
                             />
-                            <label htmlFor="mergeOverlay" className="text-sm font-medium cursor-pointer">
+                            <label htmlFor="mergeOverlay" className="text-sm text-white font-medium cursor-pointer">
                                 Fusionner les Overlays (Texte/Filtres Snapchat)
                             </label>
                         </div>
@@ -170,7 +170,7 @@ export default function UploadForm() {
                                 disabled={!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done"}
                                 className={`${!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done" ? "cursor-not-allowed" : ""} px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50`}
                             >
-                                {progress.status === "idle" ? "Télécharger" : "Reprendre"}
+                                {progress.status === "idle" ? "Télécharger " : "Reprendre"}
                             </button>
                             <button
                                 onClick={pause}

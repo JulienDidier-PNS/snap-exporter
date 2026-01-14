@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Tutorial from "./tutorial";
+import { useTutorial } from "./tutorialContext";
 
 declare global {
   interface Window {
@@ -13,9 +15,14 @@ declare global {
 
 export default function BackendHealthGuard({ children }: { children: React.ReactNode }) {
   const [isBackendUp, setIsBackendUp] = useState(false);
+  const { showTutorial, setHasCompletedTutorial } = useTutorial();
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [backendUrl, setBackendUrl] = useState<string | null>(null);
+
+  const handleTutorialComplete = () => {
+    setHasCompletedTutorial(true);
+  };
 
   useEffect(() => {
     if (window.electron && window.electron.getBackendPort) {
@@ -62,8 +69,12 @@ export default function BackendHealthGuard({ children }: { children: React.React
     };
   }, [backendUrl]);
 
-  if (isBackendUp) {
+  if (isBackendUp && !showTutorial) {
     return <>{children}</>;
+  }
+
+  if (showTutorial) {
+    return <Tutorial onComplete={handleTutorialComplete} isBackendReady={isBackendUp} />;
   }
 
   return (
