@@ -235,10 +235,10 @@ def detect_image_ext(data: bytes) -> str:
     return ".bin"
 
 async def download_memory(
-    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore, state: FastAPI.state = None
+    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore, merge_overlay: bool, state: FastAPI.state = None
 ) -> tuple[bool, int]:
     async with semaphore:
-        await pause_event.wait()  # ⏸️ attend si pause activée
+        await pause_event.wait()
         try:
             url = memory.download_link
             output_path = output_dir / memory.filename
@@ -251,95 +251,97 @@ async def download_memory(
             is_zip = response.headers.get("Content-Type", "").lower().startswith("application/zip")
 
             if is_zip:
-                with zipfile.ZipFile(io.BytesIO(content)) as zf:
-                    files = zf.namelist()
-                    main_file = next((f for f in files if "-main" in f), None)
-                    overlay_file = next((f for f in files if "-overlay" in f), None)
-
-                    if not main_file:
-                        raise ValueError("No main media file found in ZIP.")
-
-                    main_data = zf.read(main_file)
-                    overlay_data = zf.read(overlay_file) if overlay_file else None
-
-                    if memory.media_type.lower() == "image":
-                        # === IMAGE MERGE ===
-                        def merge_image(main_data, overlay_data, output_path):
-                            with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
-                                if overlay_data:
-                                    with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
-                                        overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
-                                        main_img.alpha_composite(overlay_resized)
-
-                                merged_img = main_img.convert("RGB")
-                                merged_img.save(output_path, "JPEG")
-                        await run_blocking(merge_image, main_data, overlay_data, output_path)
-
-
-                    elif memory.media_type.lower() == "video":
-                        # === VIDEO MERGE ===
-                        with tempfile.TemporaryDirectory() as tmpdir:
-                            main_path = Path(tmpdir) / "main.mp4"
-                            merged_path = Path(tmpdir) / "merged.mp4"
-                            with open(main_path, "wb") as f:
-                                f.write(main_data)
-                            if overlay_data:
-                                try:
-                                    # Validation / Overlay Normalization
-                                    with Image.open(io.BytesIO(overlay_data)) as img:
-                                        img = img.convert("RGBA")
-
-                                        overlay_path = Path(tmpdir) / "overlay.png"
-                                        img.save(overlay_path, "PNG")
-                                except Exception as e:
-                                    print("Overlay image invalide, fallback main only:", e)
-                                    output_path.write_bytes(main_data)
-                                    return True, len(content)
-                                try:
-                                    FFMPEG = str(get_ffmpeg_path())
-                                    dt_utc = memory.date.astimezone(timezone.utc)
-                                    iso_time = dt_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-                                    metadata_args = ["-metadata", f"creation_time={iso_time}"]
-                                    if memory.latitude is not None and memory.longitude is not None:
-                                        lat = f"{memory.latitude:+.4f}"
-                                        lon = f"{memory.longitude:+.4f}"
-                                        alt = getattr(memory, "altitude", 0.0)
-                                        iso6709 = f"{lat}{lon}+{alt:.3f}/"
-                                        metadata_args += ["-metadata", f"location={iso6709}", "-metadata", f"location-eng={iso6709}"]
-
-                                    await run_blocking(
-                                        lambda: subprocess.run(
-                                            [
-                                                FFMPEG,
-                                                "-y",
-                                                "-i", str(main_path),
-                                                "-i", str(overlay_path),
-                                                "-filter_complex",
-                                                "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
-                                                "-codec:a", "copy",
-                                                str(merged_path),
-                                            ],
-                                            check=True,
-                                            stdout=subprocess.DEVNULL,
-                                            stderr=subprocess.DEVNULL,
-                                        )
-                                    )
-
-                                    output_path.write_bytes(merged_path.read_bytes())
-
-                                except subprocess.CalledProcessError as e:
-                                    print("Error during ffmepg process -> Bad overlay normalization")
-                                    print("Saving main file only...")
-                                    output_path.write_bytes(main_data)
-
-                            else:
-                                # No overlay file
-                                output_path.write_bytes(main_data)
-
-                    else:
-                        raise ValueError(f"Unsupported media type: {memory.media_type}")
-
+                if not merge_overlay:
+                    output_path = output_path.with_suffix(".zip")
+                    output_path.write_bytes(content)
                     bytes_downloaded = len(content)
+                else:
+                    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+                        files = zf.namelist()
+                        main_file = next((f for f in files if "-main" in f), None)
+                        overlay_file = next((f for f in files if "-overlay" in f), None)
+
+                        if not main_file:
+                            raise ValueError("No main media file found in ZIP.")
+
+                        main_data = zf.read(main_file)
+                        overlay_data = zf.read(overlay_file) if overlay_file else None
+
+                        if memory.media_type.lower() == "image":
+                            # === IMAGE MERGE ===
+                            def merge_image(main_data, overlay_data, output_path):
+                                with Image.open(io.BytesIO(main_data)).convert("RGBA") as main_img:
+                                    if overlay_data:
+                                        with Image.open(io.BytesIO(overlay_data)).convert("RGBA") as overlay_img:
+                                            overlay_resized = overlay_img.resize(main_img.size, Image.LANCZOS)
+                                            main_img.alpha_composite(overlay_resized)
+
+                                    merged_img = main_img.convert("RGB")
+                                    merged_img.save(output_path, "JPEG")
+                            await run_blocking(merge_image, main_data, overlay_data, output_path)
+                        elif memory.media_type.lower() == "video":
+                            # === VIDEO MERGE ===
+                            with tempfile.TemporaryDirectory() as tmpdir:
+                                main_path = Path(tmpdir) / "main.mp4"
+                                merged_path = Path(tmpdir) / "merged.mp4"
+                                with open(main_path, "wb") as f:
+                                    f.write(main_data)
+                                if overlay_data:
+                                    try:
+                                        # Validation / Overlay Normalization
+                                        with Image.open(io.BytesIO(overlay_data)) as img:
+                                            img = img.convert("RGBA")
+
+                                            overlay_path = Path(tmpdir) / "overlay.png"
+                                            img.save(overlay_path, "PNG")
+                                    except Exception as e:
+                                        print("Overlay image invalide, fallback main only:", e)
+                                        output_path.write_bytes(main_data)
+                                        return True, len(content)
+                                    try:
+                                        FFMPEG = str(get_ffmpeg_path())
+                                        dt_utc = memory.date.astimezone(timezone.utc)
+                                        iso_time = dt_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                                        metadata_args = ["-metadata", f"creation_time={iso_time}"]
+                                        if memory.latitude is not None and memory.longitude is not None:
+                                            lat = f"{memory.latitude:+.4f}"
+                                            lon = f"{memory.longitude:+.4f}"
+                                            alt = getattr(memory, "altitude", 0.0)
+                                            iso6709 = f"{lat}{lon}+{alt:.3f}/"
+                                            metadata_args += ["-metadata", f"location={iso6709}", "-metadata", f"location-eng={iso6709}"]
+
+                                        await run_blocking(
+                                            lambda: subprocess.run(
+                                                [
+                                                    FFMPEG,
+                                                    "-y",
+                                                    "-i", str(main_path),
+                                                    "-i", str(overlay_path),
+                                                    "-filter_complex",
+                                                    "[1][0]scale2ref=w=iw:h=ih[overlay][base];[base][overlay]overlay=(W-w)/2:(H-h)/2",
+                                                    "-codec:a", "copy",
+                                                    str(merged_path),
+                                                ],
+                                                check=True,
+                                                stdout=subprocess.DEVNULL,
+                                                stderr=subprocess.DEVNULL,
+                                            )
+                                        )
+
+                                        output_path.write_bytes(merged_path.read_bytes())
+
+                                    except subprocess.CalledProcessError as e:
+                                        print("Error during ffmepg process -> Bad overlay normalization")
+                                        print("Saving main file only...")
+                                        output_path.write_bytes(main_data)
+
+                                else:
+                                    # No overlay file
+                                    output_path.write_bytes(main_data)
+                        else:
+                            raise ValueError(f"Unsupported media type: {memory.media_type}")
+
+                        bytes_downloaded = len(content)
             else:
                 # === NORMAL DOWNLOAD (not ZIP) ===
                 output_path.write_bytes(content)
@@ -352,7 +354,7 @@ async def download_memory(
             if asyncio.current_task().cancelled():
                 raise asyncio.CancelledError()
             # Apply metadata
-            if add_exif:
+            if add_exif and output_path.suffix != ".zip":
                 if memory.media_type.lower() == "image":
                     await run_blocking(add_exif_data, output_path, memory)
                 elif memory.media_type.lower() == "video":
@@ -387,6 +389,7 @@ async def download_all(
     max_concurrent: int,
     add_exif: bool,
     skip_existing: bool,
+    merge_overlay: bool,
     state: FastAPI.state = None,
 ):
     semaphore = asyncio.Semaphore(max_concurrent)
@@ -398,6 +401,7 @@ async def download_all(
         output_path = output_dir / memory.filename
         if skip_existing and output_path.exists():
             stats.skipped += 1
+            stats.downloaded += 1
             # S'assurer qu'il n'est pas dans les erreurs s'il existe déjà
             if state is not None:
                 async with state.failed_items_lock:
@@ -415,12 +419,8 @@ async def download_all(
     progress["downloaded"] = stats.downloaded
     progress["eta"] = None
 
-    progress_bar = tqdm(
-        total=len(to_download),
-        desc="Downloading",
-        unit="file",
-        disable=False,
-    )
+    print(f"Starting download of {len(to_download)} items...")
+    print(f"merge requested ? {merge_overlay}")
 
     async def process_and_update(memory):
         try:
@@ -430,6 +430,7 @@ async def download_all(
                 output_dir,
                 add_exif,
                 semaphore,
+                merge_overlay,
                 state,
             )
         except asyncio.CancelledError:
@@ -470,7 +471,6 @@ async def download_all(
         print("Download cancelled")
         raise
 
-    progress_bar.close()
     elapsed = time.time() - start_time
     mb_total = stats.mb
     mb_per_sec = mb_total / elapsed if elapsed > 0 else 0
@@ -499,10 +499,9 @@ async def run_import(
     concurrent: int = 10,
     add_exif: bool = True,
     skip_existing: bool = True,
+    merge_overlay: bool = True,
     state: FastAPI.state = None,
 ):
-    print("STATE downloaded_items id =", id(state.downloaded_items))
-
     memories = load_memories(json_path)
 
     global downloaded_items
@@ -517,6 +516,7 @@ async def run_import(
         max_concurrent=concurrent,
         add_exif=add_exif,
         skip_existing=skip_existing,
+        merge_overlay=merge_overlay,
         state=state,
     )
 

@@ -4,7 +4,6 @@ import {useRef, useState} from "react";
 import ProgressBar from "@/app/upload/progressBar";
 import {useProgress} from "@/app/upload/progressContext";
 
-//TODO: GETTING PROGRESS STATUS TO UPDATE BTN BEHAVIOUR
 declare global {
     interface Window {
         electron?: {
@@ -19,6 +18,7 @@ export default function UploadForm() {
     const { progress, setProgress, backendUrl } = useProgress();
 
     const [outputPath, setOutputPath] = useState("");
+    const [mergeOverlay, setMergeOverlay] = useState(true);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [jsonExportFile, setJsonExportFile] = useState<File | null>(null);
@@ -40,11 +40,13 @@ export default function UploadForm() {
             const formData = new FormData();
             formData.append("file", jsonExportFile);
             formData.append("output_path", outputPath);
+            formData.append("merge_overlay", mergeOverlay.toString());
 
             await fetch(`${backendUrl}/run`, {
                 method: "POST",
                 body: formData,
             });
+
             setProgress(p => ({ ...p, status: "running" }));
         }
     };
@@ -146,6 +148,18 @@ export default function UploadForm() {
             {isJsonSelected() && isPickup() &&
                 (
                     <div className={"flex flex-col gap-4 w-full items-center p-4 custom-bg-blue rounded-lg"}>
+                        <div className="flex items-center gap-2 mb-2 w-full justify-start px-10">
+                            <input
+                                type="checkbox"
+                                id="mergeOverlay"
+                                checked={mergeOverlay}
+                                onChange={(e) => setMergeOverlay(e.target.checked)}
+                                className="w-4 h-4 cursor-pointer"
+                            />
+                            <label htmlFor="mergeOverlay" className="text-sm font-medium cursor-pointer">
+                                Fusionner les Overlays (Texte/Filtres Snapchat)
+                            </label>
+                        </div>
                         <div className="flex gap-2 w-full justify-around">
                             <button
                                 onClick={resume}

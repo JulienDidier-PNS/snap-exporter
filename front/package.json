@@ -5,7 +5,8 @@
   "author": "JulienD.",
   "description": "Electron + NextJS Snapchat exporter",
   "scripts": {
-    "dev": "concurrently -n \"NEXT,ELECTRON\" -c \"yellow,blue\" --kill-others \"next dev\"",
+    "dev": "concurrently -n \"NEXT,ELECTRON\" -c \"yellow,blue\" --kill-others \"next dev\" \"electron ..\"",
+    "dev:front": "concurrently -n \"NEXT,ELECTRON\" -c \"yellow,blue\" --kill-others \"next dev\" \"electron .. --no-backend\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

@@ -24,12 +24,18 @@ function findAvailablePort(startPort) {
 
 // Import dynamique pour electron-serve (ESM dans CommonJS)
 let serve;
+const isDev = !app.isPackaged;
+
 const servePromise = (async () => {
-    const module = await import('electron-serve');
-    serve = module.default;
-    // L'enregistrement du protocole DOIT se faire avant que l'app soit prête
-    // electron-serve le fait lors de l'appel à la fonction exportée
-    loadURL = serve({ directory: path.join(__dirname, 'front', 'out') });
+    if (isDev) {
+        loadURL = async (window) => {
+            await window.loadURL('http://localhost:3000');
+        };
+    } else {
+        const module = await import('electron-serve');
+        serve = module.default;
+        loadURL = serve({ directory: path.join(__dirname, 'front', 'out') });
+    }
 })();
 
 async function createWindow() {
@@ -46,6 +52,7 @@ async function createWindow() {
     try {
         if (!loadURL) await servePromise;
         await loadURL(mainWindow);
+        mainWindow.webContents.openDevTools();
     } catch (err) {
         console.error("Failed to load frontend:", err);
     }
@@ -69,37 +76,44 @@ ipcMain.handle('get-backend-port', () => {
 });
 
 app.whenReady().then(async () => {
-    // Trouver un port libre pour le backend
-    backendPort = await findAvailablePort(8000);
-    console.log(`Using port ${backendPort} for backend`);
+    const shouldStartBackend = !process.argv.includes('--no-backend');
 
-    // Lancer le backend Python (PyInstaller)
-    const isWindows = process.platform === 'win32';
-    const backendExecutable = isWindows ? 'snap-exporter-backend.exe' : 'snap-exporter-backend';
-    
-    // Si l'application est packagée, le backend se trouve dans les ressources
-    let backendPath;
-    if (app.isPackaged) {
-        backendPath = path.join(process.resourcesPath, 'backend', 'dist', backendExecutable);
+    if (shouldStartBackend) {
+        // Trouver un port libre pour le backend
+        backendPort = await findAvailablePort(8000);
+        console.log(`Using port ${backendPort} for backend`);
+
+        // Lancer le backend Python (PyInstaller)
+        const isWindows = process.platform === 'win32';
+        const backendExecutable = isWindows ? 'snap-exporter-backend.exe' : 'snap-exporter-backend';
+        
+        // Si l'application est packagée, le backend se trouve dans les ressources
+        let backendPath;
+        if (app.isPackaged) {
+            backendPath = path.join(process.resourcesPath, 'backend', 'dist', backendExecutable);
+        } else {
+            backendPath = path.join(__dirname, 'backend', 'dist', backendExecutable);
+        }
+
+        console.log(`Starting backend at: ${backendPath}`);
+        
+        backendProcess = spawn(backendPath, ['--port', backendPort.toString()]);
+
+        backendProcess.stdout.on('data', (data) => {
+            console.log(`Python: ${data}`);
+        });
+
+        backendProcess.stderr.on('data', (data) => {
+            console.error(`Python error: ${data}`);
+        });
+
+        backendProcess.on('error', (err) => {
+            console.error('Failed to start backend process:', err);
+        });
     } else {
-        backendPath = path.join(__dirname, 'backend', 'dist', backendExecutable);
+        backendPort = 8000;
+        console.log('Backend execution skipped due to --no-backend flag. Assuming backend is running on port 8000.');
     }
-
-    console.log(`Starting backend at: ${backendPath}`);
-    
-    backendProcess = spawn(backendPath, ['--port', backendPort.toString()]);
-
-    backendProcess.stdout.on('data', (data) => {
-        console.log(`Python: ${data}`);
-    });
-
-    backendProcess.stderr.on('data', (data) => {
-        console.error(`Python error: ${data}`);
-    });
-
-    backendProcess.on('error', (err) => {
-        console.error('Failed to start backend process:', err);
-    });
 
     createWindow();
 });

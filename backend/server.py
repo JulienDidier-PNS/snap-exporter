@@ -143,8 +143,11 @@ async def run(
     concurrent: int = 10,
     add_exif: bool = True,
     skip_existing: bool = True,
+    merge_overlay: bool = Form(True),
 ):
     print("Received /run request")
+
+    print("RUN : Checking for existing tasks...")
     global current_run_task
     if current_run_task and not current_run_task.done():
         raise HTTPException(409, "A download is already running")
@@ -171,6 +174,9 @@ async def run(
 
     pause_event.set()  # start possible if paused
 
+    print("RUN : Starting download task...")
+    print(f"RUN : Merge Overlay: {merge_overlay}")
+
     # Start the download as an asynchronous task
     current_run_task = asyncio.create_task(
         run_import(
@@ -179,6 +185,7 @@ async def run(
             concurrent=concurrent,
             add_exif=add_exif,
             skip_existing=skip_existing,
+            merge_overlay=merge_overlay,
             state=app.state,
         )
     )
