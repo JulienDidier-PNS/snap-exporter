@@ -68,9 +68,11 @@ export default function UploadForm() {
 
     const [openRestartModal, setOpenRestartModal] = useState(false);
     const restart = async () => {
+        const formData = new FormData();
+        formData.append("output_path", outputPath);
         await fetch(`${backendUrl}/restart`, {
             method: "POST",
-            body: new FormData(),
+            body: formData,
         });
         setJsonExportFile(null);
         setOutputPath("");

@@ -242,8 +242,6 @@ async def restart(output_path: str | None = Form(None)):
     else:
         current_run_task = None
 
-
-
     #stop any ongoing download
     pause_event.clear()
 
@@ -256,18 +254,25 @@ async def restart(output_path: str | None = Form(None)):
         "eta": None,
     })
 
-    #clean downloads folder
-    _, downloads, _ = setup_directories(output_path)
+    # recalculate the exact same paths as in /run
+    uploads, downloads, root_dir = setup_directories(output_path)
+    
+    # If a custom output_path was used, the downloads folder is different
+    actual_downloads_dir = downloads
+    if output_path:
+        actual_downloads_dir = Path(output_path).expanduser().resolve() / "SnapchatExporter" / "downloads"
 
-    if downloads.exists():
-        for f in downloads.iterdir():
-            if f.is_file():
-                try:
-                    f.unlink()
-                except Exception as e:
-                    print("Delete failed:", e)
+    # Hard delete and recreate
+    for target_dir in [uploads, actual_downloads_dir]:
+        if target_dir.exists():
+            print(f"Deleting directory content: {target_dir}")
+            try:
+                shutil.rmtree(target_dir)
+                target_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                print(f"Error during deletion of {target_dir}: {e}")
 
-    #clear downloaded and failed items
+#clear downloaded and failed items
     async with app.state.downloaded_items_lock:
         app.state.downloaded_items.clear()
 
