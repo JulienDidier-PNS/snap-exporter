@@ -113,14 +113,14 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
   const step = steps[currentStep];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white p-8 font-sans relative">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-8 font-sans relative transition-colors duration-300">
       {zoomedImage && (
         <div 
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 cursor-zoom-out"
           onClick={() => setZoomedImage(null)}
         >
           <button 
-            className="absolute top-8 right-8 text-white hover:text-gray-300 transition-colors p-2"
+            className="absolute top-8 right-8 text-white hover:text-zinc-300 transition-colors p-2"
             onClick={() => setZoomedImage(null)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -141,7 +141,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
       )}
       <button 
         onClick={closeTutorial}
-        className="absolute top-8 right-8 text-gray-400 hover:text-black transition-colors p-2"
+        className="absolute top-8 right-8 text-zinc-400 hover:text-black dark:hover:text-white transition-colors p-2"
         aria-label="Fermer le tutoriel"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -163,11 +163,11 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
           )}
         </div>
 
-        <h2 className="text-3xl font-bold text-black mb-4">{step.title}</h2>
-        <p className="text-gray-600 text-lg mb-6">{step.description}</p>
+        <h2 className="text-3xl font-bold text-zinc-900 dark:text-white mb-4">{step.title}</h2>
+        <p className="text-zinc-600 dark:text-zinc-400 text-lg mb-6">{step.description}</p>
 
         {step.items && (
-          <ul className="text-left text-gray-600 mb-8 list-disc list-inside">
+          <ul className="text-left text-zinc-600 dark:text-zinc-400 mb-8 list-disc list-inside">
             {step.items.map((item, index) => (
               <li key={index} className="mb-1">
                 {item}
@@ -183,7 +183,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
                 key={index}
                 href={link.url}
                 onClick={(e) => handleLinkClick(e, link.url)}
-                className="text-yellow-600 hover:text-yellow-700 font-medium underline decoration-yellow-400/30 underline-offset-4 cursor-pointer"
+                className="text-yellow-600 dark:text-yellow-500 hover:text-yellow-700 dark:hover:text-yellow-400 font-medium underline decoration-yellow-400/30 underline-offset-4 cursor-pointer"
               >
                 {link.label}
               </a>
@@ -193,14 +193,14 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
 
         {step.secondaryImage && (
           <div 
-            className="mb-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm cursor-zoom-in transition-transform hover:scale-[1.02]"
+            className="mb-8 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm cursor-zoom-in transition-transform hover:scale-[1.02]"
             onClick={() => setZoomedImage(step.secondaryImage!)}
           >
             <Image 
               src={step.secondaryImage} 
-              alt="Illustration secondaire" 
-              width={350} 
-              height={200} 
+              alt="Aide visuelle" 
+              width={400} 
+              height={250}
               className="object-cover"
             />
           </div>
@@ -211,7 +211,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
             <div
               key={index}
               className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                index === currentStep ? "bg-yellow-400" : "bg-gray-200"
+                index === currentStep ? "bg-yellow-400" : "bg-zinc-200 dark:bg-zinc-800"
               }`}
             />
           ))}
@@ -222,7 +222,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
             onClick={prevStep}
             disabled={currentStep === 0}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
-              currentStep === 0 ? "invisible" : "text-gray-400 hover:text-black cursor-pointer"
+              currentStep === 0 ? "invisible" : "text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
             }`}
           >
             {step.prevLabel || "Précédent"}
@@ -234,8 +234,8 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
               currentStep === steps.length - 1
                 ? isBackendReady
                   ? "bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-black text-white hover:bg-zinc-800"
+                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400 cursor-not-allowed"
+                : "bg-black dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200"
             }`}
           >
             {currentStep === steps.length - 1 
