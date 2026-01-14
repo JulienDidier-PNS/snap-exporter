@@ -323,9 +323,9 @@ export default function UploadForm() {
                             {progress.status === "idle" && (
                                 <button
                                     onClick={resume}
-                                    disabled={!isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done"}
+                                    disabled={!isPickup() || !isJsonSelected()}
                                     className={`flex-1 px-8 py-4 rounded-xl font-bold transition-all duration-200 ${
-                                        !isPickup() || !isJsonSelected() || progress.status === "running" || progress.status === "done" 
+                                        !isPickup() || !isJsonSelected() 
                                         ? "bg-zinc-100 text-zinc-400 cursor-not-allowed" 
                                         : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 active:scale-95"
                                     }`}

@@ -22,6 +22,7 @@ declare global {
         electron?: {
             selectFolder: () => Promise<string | null>;
             getBackendPort: () => Promise<number>;
+            isElectron?: boolean;
         };
     }
 }
