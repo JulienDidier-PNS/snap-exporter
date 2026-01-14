@@ -32,6 +32,7 @@ export default function UploadForm() {
         }
     };
 
+    //Call when download not started yet
     const handleUpload = async () => {
         if(!jsonExportFile){
             return setOutputPath("");
@@ -155,6 +156,7 @@ export default function UploadForm() {
                                 type="checkbox"
                                 id="mergeOverlay"
                                 checked={mergeOverlay}
+                                disabled={progress.status !== "idle"}
                                 onChange={(e) => setMergeOverlay(e.target.checked)}
                                 className="w-4 h-4 cursor-pointer"
                             />
