@@ -7,6 +7,8 @@ import {useProgress} from "@/app/upload/progressContext";
 function InfoTooltip({ text }: { text: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [style, setStyle] = useState<React.CSSProperties>({});
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -18,23 +20,91 @@ function InfoTooltip({ text }: { text: string }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (isOpen && contentRef.current && tooltipRef.current) {
+            const rect = contentRef.current.getBoundingClientRect();
+            const parentRect = tooltipRef.current.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const padding = 10;
+
+            let left = -rect.width / 2 + parentRect.width / 2;
+            const absoluteLeft = parentRect.left + left;
+
+            if (absoluteLeft < padding) {
+                left = -parentRect.left + padding;
+            } else if (absoluteLeft + rect.width > viewportWidth - padding) {
+                left = viewportWidth - padding - parentRect.left - rect.width;
+            }
+
+            // Gestion du débordement vers le haut
+            let bottom = '100%';
+            let arrowClass = 'top-full border-t-zinc-900';
+            let mb = '0.5rem'; // mb-2
+
+            if (parentRect.top - rect.height - 20 < 0) {
+                bottom = 'auto';
+                mb = '0';
+                // @ts-ignore
+                setStyle(prev => ({ ...prev, top: 'calc(100% + 0.5rem)' }));
+                arrowClass = 'bottom-full border-b-zinc-900';
+            } else {
+                // @ts-ignore
+                setStyle(prev => ({ ...prev, top: 'auto' }));
+            }
+
+            // Calcul du décalage de la flèche
+            const arrowCenterRelToTooltip = rect.width / 2;
+            const targetArrowPosRelToTooltip = -left + parentRect.width / 2;
+            const arrowOffset = targetArrowPosRelToTooltip - arrowCenterRelToTooltip;
+
+            setStyle(prev => ({
+                ...prev,
+                left: `${left}px`,
+                bottom: bottom,
+                marginBottom: mb,
+                transform: 'none',
+                '--arrow-offset': `${arrowOffset}px`
+            }));
+        }
+    }, [isOpen]);
+
     return (
         <div className="relative inline-block ml-2 group/tooltip" ref={tooltipRef}>
-            <button
+            <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     setIsOpen(!isOpen);
                 }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 text-white text-xs font-bold transition-all border border-white/20 group-hover/tooltip:border-white/40"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setIsOpen(!isOpen);
+                    }
+                }}
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/30 text-white text-xs font-bold transition-all border border-white/20 group-hover/tooltip:border-white/40 cursor-pointer"
                 title="Plus d'informations"
             >
                 i
-            </button>
+            </div>
             {isOpen && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-zinc-900 text-white text-xs rounded-lg shadow-2xl z-[60] border border-white/10 animate-in fade-in zoom-in duration-200">
+                <div 
+                    ref={contentRef}
+                    style={style}
+                    className="absolute w-64 p-3 bg-zinc-900 text-white text-xs rounded-lg shadow-2xl z-[60] border border-white/10 animate-in fade-in zoom-in duration-200"
+                >
                     <p className="leading-relaxed">{text}</p>
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-900"></div>
+                    <div 
+                        className={`absolute border-8 border-transparent ${style.bottom === 'auto' ? 'bottom-full border-b-zinc-900' : 'top-full border-t-zinc-900'}`}
+                        style={{
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            marginLeft: 'var(--arrow-offset, 0px)'
+                        }}
+                    ></div>
                 </div>
             )}
         </div>
@@ -46,6 +116,7 @@ declare global {
         electron?: {
             selectFolder: () => Promise<string | null>;
             getBackendPort: () => Promise<number>;
+            isElectron?: boolean;
         };
     }
 }
@@ -61,11 +132,17 @@ export default function UploadForm() {
     const [jsonExportFile, setJsonExportFile] = useState<File | null>(null);
 
     const pickFolder = async () => {
-        if (!window.electron) return;
-
-        const folder = await window.electron.selectFolder();
-        if (folder) {
-            setOutputPath(folder);
+        try {
+            const win = (typeof window !== 'undefined') ? window : null;
+            const electron = win?.electron;
+            if (electron && typeof electron.selectFolder === 'function') {
+                const folder = await electron.selectFolder();
+                if (folder) {
+                    setOutputPath(folder);
+                }
+            }
+        } catch (err) {
+            console.error("Error picking folder:", err);
         }
     };
 

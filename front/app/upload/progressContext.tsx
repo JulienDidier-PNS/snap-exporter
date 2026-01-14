@@ -17,6 +17,15 @@ interface ProgressContextType {
 
 const ProgressContext = createContext<ProgressContextType | null>(null);
 
+declare global {
+    interface Window {
+        electron?: {
+            selectFolder: () => Promise<string | null>;
+            getBackendPort: () => Promise<number>;
+        };
+    }
+}
+
 export const ProgressProvider = ({ children }: { children: React.ReactNode }) => {
     const [progress, setProgress] = useState<ProgressDTO>({
         status: "idle",
@@ -28,10 +37,16 @@ export const ProgressProvider = ({ children }: { children: React.ReactNode }) =>
     const [backendUrl, setBackendUrl] = useState("http://127.0.0.1:8000");
 
     useEffect(() => {
-        if (window.electron && window.electron.getBackendPort) {
-            window.electron.getBackendPort().then((port: number) => {
-                setBackendUrl(`http://127.0.0.1:${port}`);
-            });
+        const win = (typeof window !== 'undefined') ? window : null;
+        if (win && win.electron && typeof win.electron.getBackendPort === 'function') {
+            win.electron.getBackendPort()
+                .then((port: number) => {
+                    setBackendUrl(`http://127.0.0.1:${port}`);
+                })
+                .catch(err => {
+                    console.error("Failed to get backend port from Electron context:", err);
+                    setBackendUrl("http://127.0.0.1:8000");
+                });
         }
     }, []);
 

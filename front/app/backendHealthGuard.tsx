@@ -9,6 +9,7 @@ declare global {
       electron?: {
           selectFolder: () => Promise<string | null>;
           getBackendPort: () => Promise<number>;
+          isElectron?: boolean;
       };
   }
 }
@@ -25,10 +26,16 @@ export default function BackendHealthGuard({ children }: { children: React.React
   };
 
   useEffect(() => {
-    if (window.electron && window.electron.getBackendPort) {
-      window.electron.getBackendPort().then((port: number) => {
-        setBackendUrl(`http://127.0.0.1:${port}`);
-      });
+    const win = (typeof window !== 'undefined') ? window : null;
+    if (win && win.electron && typeof win.electron.getBackendPort === 'function') {
+      win.electron.getBackendPort()
+        .then((port: number) => {
+          setBackendUrl(`http://127.0.0.1:${port}`);
+        })
+        .catch(err => {
+          console.error("Failed to get backend port from Electron:", err);
+          setBackendUrl("http://127.0.0.1:8000");
+        });
     } else {
       // Fallback pour le développement web classique si besoin
       setBackendUrl("http://127.0.0.1:8000");

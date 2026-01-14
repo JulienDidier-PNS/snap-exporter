@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import is from "@sindresorhus/is";
-import undefined = is.undefined;
 
 interface TutorialProps {
   onComplete: () => void;
@@ -90,11 +88,8 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
 
   const handleLinkClick = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
-    if (typeof window !== 'undefined' && window.electron && window.electron.openExternal) {
-      window.electron.openExternal(url);
-    } else {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    // Le main process (main.js) intercepte window.open pour l'ouvrir dans le navigateur système
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const closeTutorial = () => {

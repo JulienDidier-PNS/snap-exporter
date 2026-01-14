@@ -19,7 +19,7 @@ function HomeContent() {
         >
           🎓 Aide & Tutoriel
         </button>
-        <main className="flex min-h-screen w-full max-w-3xl h-full max-h-11/12 flex-col items-center justify-between rounded-4xl py-16 px-16 bg-white ">
+        <main className="flex min-h-screen w-full h-full max-h-11/12 flex-col items-center justify-between rounded-4xl py-16 px-4 bg-white ">
             <div className={"flex flex-col items-center justify-center w-full max-h-11/12 lg:w-auto"}>
                 <h1 className="text-4xl font-bold text-black">SnapExporter</h1>
                 <Image

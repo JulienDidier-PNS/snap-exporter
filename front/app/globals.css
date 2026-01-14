@@ -94,7 +94,6 @@ body {
 .btn-todo:hover{
   background-color: royalblue;
   border: 1px solid white;
-  scale: 110%;
 }
 
 .btn-ok{

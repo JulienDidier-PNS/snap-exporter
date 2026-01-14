@@ -40,8 +40,8 @@ const servePromise = (async () => {
 
 async function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: 600,
+        height: 1000,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -53,6 +53,23 @@ async function createWindow() {
         if (!loadURL) await servePromise;
         await loadURL(mainWindow);
         //mainWindow.webContents.openDevTools();
+
+        // Intercepter l'ouverture de nouveaux liens pour les ouvrir dans le navigateur par défaut
+        mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+            if (url.startsWith('http')) {
+                require('electron').shell.openExternal(url);
+                return { action: 'deny' };
+            }
+            return { action: 'allow' };
+        });
+
+        // Empêcher la navigation vers des sites externes dans la fenêtre principale
+        mainWindow.webContents.on('will-navigate', (event, url) => {
+            if (url.startsWith('http') && !url.includes('localhost:3000') && !url.includes('127.0.0.1')) {
+                event.preventDefault();
+                require('electron').shell.openExternal(url);
+            }
+        });
     } catch (err) {
         console.error("Failed to load frontend:", err);
     }
