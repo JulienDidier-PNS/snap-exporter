@@ -73,6 +73,8 @@ function InfoTooltip({ text }: { text: string }) {
             <div
                 role="button"
                 tabIndex={0}
+                onMouseEnter={() => setIsOpen(true)}
+                onMouseLeave={() => setIsOpen(false)}
                 onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -85,7 +87,7 @@ function InfoTooltip({ text }: { text: string }) {
                         setIsOpen(!isOpen);
                     }
                 }}
-                className="w-5 h-5 flex items-center justify-center rounded-full bg-zinc-900/10 dark:bg-white/10 hover:bg-zinc-900/20 dark:hover:bg-white/30 text-zinc-700 dark:text-white text-xs font-bold transition-all border border-zinc-900/20 dark:border-white/20 group-hover/tooltip:border-zinc-900/40 dark:group-hover/tooltip:border-white/40 cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white text-xs font-bold transition-all border border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 cursor-pointer shadow-sm"
                 title="Plus d'informations"
             >
                 i
@@ -227,7 +229,7 @@ export default function UploadForm() {
                                 onClick={pickFolder}
                                 onMouseEnter={() => setHoverFolder(true)}
                                 onMouseLeave={() => setHoverFolder(false)}
-                                className={`px-6 py-3 text-sm flex items-center justify-center gap-2 btn min-h-[50px] w-full
+                                className={`px-6 py-3 text-sm flex items-center justify-center gap-2 btn h-[60px] w-full
                                 ${isPickup() ? "btn-ok" : "btn-todo"}
                             `}
                             >
@@ -266,7 +268,7 @@ export default function UploadForm() {
                                     onMouseLeave={() => setHoverJson(false)}
                                     disabled={outputPath == null || outputPath === ""}
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={`px-6 py-3 text-sm w-full flex items-center justify-center gap-2 btn min-h-[50px]
+                                    className={`px-6 py-3 text-sm w-full flex items-center justify-center gap-2 btn h-[60px]
                                 ${!isPickup() ? "btn-disabled" : isJsonSelected() ? "btn-ok" : "btn-todo"}`
                                     }
                                 >
