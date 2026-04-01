@@ -21,6 +21,7 @@ if (Test-Path "build") { Remove-Item -Recurse -Force build }
 if (Test-Path "dist") { Remove-Item -Recurse -Force dist }
 
 # Build backend
+pip install -r requirements.txt
 pyinstaller snap-exporter-backend.spec --noconfirm
 
 cd ..
