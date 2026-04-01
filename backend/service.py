@@ -235,7 +235,7 @@ def detect_image_ext(data: bytes) -> str:
     return ".bin"
 
 async def download_memory(
-    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore, merge_overlay: bool, state: FastAPI.state = None
+    memory: Memory, output_dir: Path, add_exif: bool, semaphore: asyncio.Semaphore, merge_overlay: bool, state=None
 ) -> tuple[bool, int]:
     async with semaphore:
         await pause_event.wait()
@@ -390,7 +390,7 @@ async def download_all(
     add_exif: bool,
     skip_existing: bool,
     merge_overlay: bool,
-    state: FastAPI.state = None,
+    state=None,
 ):
     semaphore = asyncio.Semaphore(max_concurrent)
     stats = Stats()
@@ -500,7 +500,7 @@ async def run_import(
     add_exif: bool = True,
     skip_existing: bool = True,
     merge_overlay: bool = True,
-    state: FastAPI.state = None,
+    state=None,
 ):
     memories = load_memories(json_path)
 
