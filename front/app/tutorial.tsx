@@ -73,11 +73,9 @@ const steps: Step[] = [
     description: "Super ! Il ne vous reste plus qu'à :",
     items: [
       "Télécharger le fichier généré par Snapchat",
-      "Extraire le contenu du fichier zip",
-      "Garder le fichier 'memories_history.json' dans le dossier 'json'"
+      "Selectionner ce fichier ZIP sur le boutton 'Fichier Snapchat (.zip)'"
     ],
     icon: "📬",
-    secondaryImage: "/tutorials/zip_extract.png",
     nextLabel: "Terminer la configuration",
   },
 ];

@@ -11,6 +11,7 @@ import shutil
 import asyncio
 import logging
 
+import zipfile
 from service import run_import, get_progress as service_get_progress, pause_event, get_error_list
 
 from typing import List
@@ -155,11 +156,35 @@ async def run(
     print("RUN : Setting up directories...")
     #Folders creation
     uploads, downloads, root_dir = setup_directories(output_path)
-    
-    # Save uploaded JSON file
-    json_path = uploads / file.filename
-    with open(json_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+
+    # Process the uploaded file
+    if file.filename.lower().endswith(".zip"):
+        print("RUN : ZIP file detected, extracting memories_history.json...")
+        try:
+            # Open ZIP from memory (in-memory file stream)
+            import io
+            zip_content = await file.read()
+            with zipfile.ZipFile(io.BytesIO(zip_content), 'r') as zip_ref:
+                # Find memories_history.json anywhere in the zip
+                json_filename = next((name for name in zip_ref.namelist() if name.endswith("memories_history.json")), None)
+                
+                if not json_filename:
+                    raise HTTPException(400, "Aucun fichier 'memories_history.json' trouvé dans l'archive ZIP")
+                
+                # Extract it to the uploads folder
+                json_path = uploads / "memories_history.json"
+                with zip_ref.open(json_filename) as source, open(json_path, "wb") as target:
+                    shutil.copyfileobj(source, target)
+                
+                print(f"RUN : Extracted {json_filename} to {json_path}")
+        except zipfile.BadZipFile:
+            raise HTTPException(400, "Le fichier envoyé n'est pas un ZIP valide")
+    else:
+        # If it's not a ZIP, we assume it's the JSON file itself (or we'll fail later)
+        json_path = uploads / file.filename
+        with open(json_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        print(f"RUN : Saved uploaded file to {json_path}")
 
     #output directory
     output_dir = downloads

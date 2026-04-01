@@ -4,6 +4,7 @@ import {useRef, useState, useEffect} from "react";
 import ProgressBar from "@/app/upload/progressBar";
 import {useProgress} from "@/app/upload/progressContext";
 
+
 function InfoTooltip({ text }: { text: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
@@ -38,17 +39,13 @@ function InfoTooltip({ text }: { text: string }) {
 
             // Gestion du débordement vers le haut
             let bottom = '100%';
-            let arrowClass = 'top-full border-t-zinc-900';
             let mb = '0.5rem'; // mb-2
 
             if (parentRect.top - rect.height - 20 < 0) {
                 bottom = 'auto';
                 mb = '0';
-                // @ts-ignore
                 setStyle(prev => ({ ...prev, top: 'calc(100% + 0.5rem)' }));
-                arrowClass = 'bottom-full border-b-zinc-900';
             } else {
-                // @ts-ignore
                 setStyle(prev => ({ ...prev, top: 'auto' }));
             }
 
@@ -130,6 +127,12 @@ export default function UploadForm() {
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [jsonExportFile, setJsonExportFile] = useState<File | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setJsonExportFile(e.target.files[0]);
+        }
+    };
 
     const pickFolder = async () => {
         try {
@@ -251,14 +254,10 @@ export default function UploadForm() {
                             <div className={"flex flex-1 items-center"}>
                                 <input
                                     type="file"
-                                    accept=".json"
+                                    accept="application/zip"
                                     ref={fileInputRef}
                                     style={{ display: "none" }}
-                                    onChange={(e) => {
-                                        if (e.target.files && e.target.files.length > 0) {
-                                            setJsonExportFile(e.target.files[0]);
-                                        }
-                                    }}
+                                    onChange={handleFileChange}
                                 />
                                 <button
                                     id="startImportBtn"
@@ -273,18 +272,18 @@ export default function UploadForm() {
                                     <span className="flex-1 text-center grid">
                                         {/* Texte invisible pour réserver l'espace le plus large et éviter le flickering */}
                                         <span className="invisible px-4 row-start-1 col-start-1 text-sm">
-                                            {isJsonSelected() ? "J'ai un autre fichier 🔍" : "Sélectionner le fichier snapchat (.json)"}
+                                            {isJsonSelected() ? "J'ai un autre fichier 🔍" : "Sélectionner l'archive Snapchat (.zip)"}
                                         </span>
                                         <span className="row-start-1 col-start-1 flex items-center justify-center">
                                             { isJsonSelected() && isPickup() ?
                                                 hoverJson ?
-                                                    "Autre fichier 🔍" :
-                                                    "Export ✅" :
-                                                "Fichier Snapchat (.json)"
+                                                    "Autre archive 🔍" :
+                                                    "Archive ✅" :
+                                                "Archive Snapchat (.zip)"
                                             }
                                         </span>
                                     </span>
-                                    <InfoTooltip text="Sélectionnez le fichier 'memories_history.json' que vous avez extrait de votre archive Snapchat." />
+                                    <InfoTooltip text="Sélectionnez l'archive .zip de votre export Snapchat. L'application y cherchera automatiquement le fichier 'memories_history.json'." />
                                 </button>
                             </div>
                         )}
