@@ -22,8 +22,9 @@ from tzlocal import get_localzone
 from datetime import datetime
 from asyncio import Lock
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Optional, Any
 
+state: Optional[Any] = None
 progress = {"status": "idle","downloaded": 0, "total": 0,"eta": None}
 
 # Global HTTP client
