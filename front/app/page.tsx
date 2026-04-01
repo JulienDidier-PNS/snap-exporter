@@ -20,7 +20,7 @@ function HomeContent() {
             >
               🎓 Aide & Tutoriel
             </button>
-            <div className={"flex flex-col items-center justify-center w-full lg:w-auto"}>
+            <div className={"flex flex-col items-center justify-center w-full lg:w-auto flex-1"}>
                 <h1 className="text-5xl font-black text-zinc-900 dark:text-white tracking-tight mb-2">SnapExporter</h1>
                 <p className="text-zinc-400 font-medium mb-8">Sauvegardez vos souvenirs en toute simplicité</p>
                 <div className="relative group mb-8">
