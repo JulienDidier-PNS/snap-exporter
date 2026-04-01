@@ -4,7 +4,10 @@
 a = Analysis(
     ['server.py'],
     pathex=[],
-    binaries=[('bin/ffmpeg', 'bin')],
+    binaries=[
+        ('bin/ffmpeg', 'bin'),
+        ('bin/ffmpeg.exe', 'bin'),
+    ],
     datas=[],
     hiddenimports=[],
     hookspath=[],

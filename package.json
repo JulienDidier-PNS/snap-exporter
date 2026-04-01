@@ -5,8 +5,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "npx electron-builder build --win",
-    "build:mac": "npx electron-builder build --mac",
+    "build": "electron-builder build",
+    "build:mac": "electron-builder build --mac",
+    "build:win": "electron-builder build --win",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "build": {
@@ -24,8 +25,12 @@
     ],
     "extraResources": [
       {
-        "from": "backend/dist/snap-exporter-backend",
-        "to": "backend/dist/snap-exporter-backend"
+        "from": "backend/dist",
+        "to": "backend/dist",
+        "filter": [
+          "snap-exporter-backend",
+          "snap-exporter-backend.exe"
+        ]
       }
     ],
     "mac": {

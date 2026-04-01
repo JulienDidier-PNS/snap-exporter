@@ -107,6 +107,8 @@ app.whenReady().then(async () => {
         // Si l'application est packagée, le backend se trouve dans les ressources
         let backendPath;
         if (app.isPackaged) {
+            // Sur Windows, electron-builder met les ressources dans 'resources',
+            // mais l'exécutable lui-même est au même niveau que 'resources'
             backendPath = path.join(process.resourcesPath, 'backend', 'dist', backendExecutable);
         } else {
             backendPath = path.join(__dirname, 'backend', 'dist', backendExecutable);
@@ -114,9 +116,13 @@ app.whenReady().then(async () => {
 
         console.log(`Starting backend at: ${backendPath}`);
         
-        backendProcess = spawn(backendPath, ['--port', backendPort.toString()], {
-            detached: process.platform !== 'win32'
-        });
+        const spawnOptions = {
+            detached: process.platform !== 'win32',
+            stdio: 'pipe',
+            windowsHide: true
+        };
+        
+        backendProcess = spawn(backendPath, ['--port', backendPort.toString()], spawnOptions);
 
         backendProcess.stdout.on('data', (data) => {
             console.log(`Python: ${data}`);
