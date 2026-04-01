@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder build --mac",
+    "build:win": "npx electron-builder build --win",
+    "build:mac": "npx electron-builder build --mac",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "build": {
@@ -60,11 +61,11 @@
   },
   "homepage": "https://github.com/JulienDidier-PNS/snap-exporter#readme",
   "devDependencies": {
-    "electron": "^39.2.7",
-    "electron-builder": "^26.4.0"
+    "electron": "39.2.7",
+    "electron-builder": "26.4.0"
   },
   "dependencies": {
-    "electron-serve": "^3.0.0",
-    "jszip": "^3.10.1"
+    "electron-serve": "3.0.0",
+    "jszip": "3.10.1"
   }
 }
