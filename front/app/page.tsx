@@ -44,7 +44,7 @@ function HomeContent() {
                   <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                   <Image
                       className="relative self-center hover:scale-105 transition-transform duration-500"
-                      src="/snap-logo.png"
+                      src="/snap-logo.webp"
                       alt="snapchat logo"
                       width={200}
                       height={50}
