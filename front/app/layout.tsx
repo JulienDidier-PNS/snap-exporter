@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

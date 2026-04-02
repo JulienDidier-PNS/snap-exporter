@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {

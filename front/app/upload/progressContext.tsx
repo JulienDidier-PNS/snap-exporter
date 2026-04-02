@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";

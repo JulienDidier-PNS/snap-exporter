@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 const { contextBridge, ipcRenderer, shell } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {

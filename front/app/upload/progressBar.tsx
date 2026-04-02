@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 import {useEffect} from "react";
 import {useProgress} from "@/app/upload/progressContext";
 import {useLanguage} from "@/app/languageContext";

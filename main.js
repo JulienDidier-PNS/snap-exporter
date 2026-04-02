@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Julien Didier
+// Licensed under the MIT License
 const { app, BrowserWindow, protocol, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');

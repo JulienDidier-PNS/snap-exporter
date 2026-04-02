@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Julien Didier
+# Licensed under the MIT License
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder

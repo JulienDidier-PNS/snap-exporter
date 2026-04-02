@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+# Copyright (c) 2026 Julien Didier
+# Licensed under the MIT License
 
 
 a = Analysis(
