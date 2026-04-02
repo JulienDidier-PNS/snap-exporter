@@ -30,7 +30,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
     {
       title: t.tutorial.welcome_title,
       description: t.tutorial.welcome_desc,
-      image: "/snap-logo.png",
+      image: "/snap-logo.webp",
       nextLabel: t.tutorial.lets_go,
     },
     {
