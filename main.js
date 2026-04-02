@@ -44,6 +44,7 @@ async function createWindow() {
     mainWindow = new BrowserWindow({
         width: 600,
         height: 1000,
+        icon: path.join(__dirname, 'build', 'icon.png'),
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,

@@ -19,6 +19,7 @@
       "main.js",
       "preload.js",
       "package.json",
+      "build/**/*",
       "node_modules/**/*",
       "front/out/**/*"
     ],
@@ -34,7 +35,12 @@
     ],
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "dmg": {
       "contents": [
