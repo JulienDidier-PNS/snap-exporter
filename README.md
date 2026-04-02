@@ -95,6 +95,12 @@ Snap Exporter ne se contente pas de télécharger les fichiers :
 - Snapchat ne permet pas aux développeurs tiers de demander directement le fichier de données (DMD). Vous devez le demander manuellement via l'interface Snapchat (expliqué dans le tutoriel de l'app).
 - La vitesse de téléchargement peut être limitée par votre connexion et les quotas des serveurs AWS de Snapchat.
 
+## 📄 License
+Ce projet est sous la license MIT - voir le fichier fichier LICENSE pour plus de détails.
+
+## ⚖️ Legal
+Ce logiciel est fourni « tel quel », sans garantie d'aucune sorte.
+
 ---
 
 ## 🇺🇸 English
@@ -187,3 +193,9 @@ Snap Exporter does more than just download files:
 ### ⚠️ Limitations
 - Snapchat does not allow third-party developers to directly request the Data Download File (DMD). You must request it manually via the Snapchat interface (explained in the app's tutorial).
 - Download speed may be limited by your connection and Snapchat's AWS server quotas.
+
+## 📄 License
+This project is licensed under the MIT License – see the LICENSE file for details.
+
+## ⚖️ Legal
+This software is provided "as is", without warranty of any kind.
