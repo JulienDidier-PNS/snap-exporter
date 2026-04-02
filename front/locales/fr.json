@@ -79,5 +79,12 @@
     "status_waiting": "En attente",
     "completed": "% complété",
     "eta": "Temps restant :"
+  },
+  "about": {
+    "title": "À propos",
+    "version": "Snap Exporter v1.2.0",
+    "copyright": "© 2026 Julien Didier",
+    "description": "Ce logiciel est open-source et sous licence MIT. Vous êtes libre de l'utiliser, de le modifier et de le distribuer.",
+    "source_code": "Code source :"
   }
 }

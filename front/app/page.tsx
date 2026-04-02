@@ -8,16 +8,20 @@ import DownloadHistory from "@/app/upload/downloadHistory";
 import {ProgressProvider} from "@/app/upload/progressContext";
 import BackendHealthGuard from "@/app/backendHealthGuard";
 import { TutorialProvider, useTutorial } from "./tutorialContext";
+import { useState } from "react";
+import AboutModal from "./components/AboutModal";
 
 import { useLanguage } from "./languageContext";
 
 function HomeContent() {
   const { openTutorial } = useTutorial();
   const { language, setLanguage, t } = useLanguage();
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   return (
     <BackendHealthGuard>
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-[#09090b] relative transition-colors duration-300">
+        <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
         <main className="flex min-h-[90vh] w-full max-w-4xl flex-col items-center justify-between rounded-[2.5rem] py-16 px-8 bg-white dark:bg-zinc-900/40 shadow-[0_0_50px_-12px_rgba(0,0,0,0.1)] relative border border-zinc-100 dark:border-white/5 transition-colors duration-300">
             <div className="absolute top-8 left-8 flex items-center gap-2">
               <button 
@@ -79,6 +83,12 @@ function HomeContent() {
                     >
                         ☕ {t.common.support_project}
                     </a>
+                    <button 
+                      onClick={() => setIsAboutOpen(true)}
+                      className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5"
+                    >
+                        ℹ️ {t.about.title}
+                    </button>
                 </div>
             </footer>
         </main>
