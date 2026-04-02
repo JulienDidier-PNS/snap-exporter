@@ -5,7 +5,7 @@ import ProgressBar from "@/app/upload/progressBar";
 import {useProgress} from "@/app/upload/progressContext";
 
 
-function InfoTooltip({ text }: { text: string }) {
+function InfoTooltip({ text, tooltipTitle }: { text: string; tooltipTitle?: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -85,7 +85,7 @@ function InfoTooltip({ text }: { text: string }) {
                     }
                 }}
                 className="w-5 h-5 flex items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-900 dark:text-white text-xs font-bold transition-all border border-zinc-300 dark:border-zinc-600 hover:border-zinc-400 dark:hover:border-zinc-500 cursor-pointer shadow-sm"
-                title="Plus d'informations"
+                title={tooltipTitle || "Info"}
             >
                 i
             </div>
@@ -120,7 +120,10 @@ declare global {
     }
 }
 
+import { useLanguage } from "../languageContext";
+
 export default function UploadForm() {
+    const { t } = useLanguage();
     //PARENT OBJ
     const { progress, setProgress, backendUrl } = useProgress();
 
@@ -220,7 +223,7 @@ export default function UploadForm() {
                     onClick={() => setShowSettings(!showSettings)}
                     className="text-xs font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors flex items-center gap-2 mb-2"
                 >
-                    {showSettings ? "⬇️ Cacher les paramètres" : "➡️ Voir les paramètres de l'export"}
+                    {showSettings ? t.upload.hide_settings : t.upload.show_settings}
                 </button>
             )}
 
@@ -239,17 +242,17 @@ export default function UploadForm() {
                                 <span className="flex-1 text-center grid">
                                     {/* Texte invisible pour réserver l'espace le plus large et éviter le flickering */}
                                     <span className="invisible px-4 row-start-1 col-start-1">
-                                        {isPickup() ? "Changer le dossier 🔍" : "Dossier de sortie"}
+                                        {isPickup() ? t.upload.change_folder : t.upload.output_folder}
                                     </span>
                                     <span className="row-start-1 col-start-1 flex items-center justify-center">
                                         {isPickup()
                                             ? hoverFolder
-                                                ? "Changer le dossier 🔍"
-                                                : "Dossier ✅"
-                                            : "Dossier de sortie"}
+                                                ? t.upload.change_folder
+                                                : t.upload.folder_ok
+                                            : t.upload.output_folder}
                                     </span>
                                 </span>
-                                <InfoTooltip text="Choisissez l'endroit où vos souvenirs seront téléchargés sur votre ordinateur." />
+                                <InfoTooltip text={t.upload.tooltip_folder} tooltipTitle={t.tutorial.continue} />
                             </button>
                         </div>
                         {isPickup() && (
@@ -274,18 +277,18 @@ export default function UploadForm() {
                                     <span className="flex-1 text-center grid">
                                         {/* Texte invisible pour réserver l'espace le plus large et éviter le flickering */}
                                         <span className="invisible px-4 row-start-1 col-start-1 text-sm">
-                                            {isJsonSelected() ? "J'ai un autre fichier 🔍" : "Sélectionner l'archive Snapchat (.zip)"}
+                                            {isJsonSelected() ? t.upload.change_zip : t.upload.select_zip}
                                         </span>
                                         <span className="row-start-1 col-start-1 flex items-center justify-center">
                                             { isJsonSelected() && isPickup() ?
                                                 hoverJson ?
-                                                    "Autre archive 🔍" :
-                                                    "Archive ✅" :
-                                                "Archive Snapchat (.zip)"
+                                                    t.upload.change_zip :
+                                                    t.upload.zip_ok :
+                                                t.upload.select_zip
                                             }
                                         </span>
                                     </span>
-                                    <InfoTooltip text="Sélectionnez l'archive .zip de votre export Snapchat. L'application y cherchera automatiquement le fichier 'memories_history.json'." />
+                                    <InfoTooltip text={t.upload.tooltip_zip} tooltipTitle={t.tutorial.continue} />
                                 </button>
                             </div>
                         )}
@@ -315,9 +318,9 @@ export default function UploadForm() {
                                     className="w-5 h-5 cursor-pointer accent-zinc-900 dark:accent-zinc-100 rounded border-zinc-300"
                                 />
                                 <label htmlFor="mergeOverlay" className="text-sm text-zinc-700 dark:text-zinc-300 font-semibold cursor-pointer select-none">
-                                    Fusionner les Overlays (Texte/Filtres Snapchat)
+                                    {t.upload.merge_overlays}
                                 </label>
-                                <InfoTooltip text="Le format par défaut d'export de snapchat sépare les textes des médias. Sélectioner cette option fusionnera les fichiers concernés pour obtenir un seul et même fichier." />
+                                <InfoTooltip text={t.upload.tooltip_merge} tooltipTitle={t.tutorial.continue} />
                             </div>
                         )}
                         <div className="flex gap-4 w-full justify-center">
@@ -331,7 +334,7 @@ export default function UploadForm() {
                                         : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 active:scale-95"
                                     }`}
                                 >
-                                    Démarrer le téléchargement
+                                    {t.upload.start_download}
                                 </button>
                             )}
                             {progress.status === "running" && (
@@ -339,7 +342,7 @@ export default function UploadForm() {
                                     onClick={pause}
                                     className="px-8 py-4 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-all shadow-lg shadow-amber-500/20 active:scale-95"
                                 >
-                                    Pause
+                                    {t.upload.pause}
                                 </button>
                             )}
                             {progress.status === "paused" && (
@@ -347,7 +350,7 @@ export default function UploadForm() {
                                     onClick={resume}
                                     className="px-8 py-4 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
                                 >
-                                    Reprendre
+                                    {t.upload.resume}
                                 </button>
                             )}
                             {(progress.status === "done" || progress.status === "paused" || progress.status === "running") && (
@@ -355,7 +358,7 @@ export default function UploadForm() {
                                     onClick={() => setOpenRestartModal(true)}
                                     className="px-8 py-4 bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200 rounded-xl font-bold hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-all active:scale-95"
                                 >
-                                    Réinitialiser
+                                    {t.upload.reset}
                                 </button>
                             )}
                         </div>
@@ -369,17 +372,17 @@ export default function UploadForm() {
             {openRestartModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                     <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl max-w-sm w-full shadow-2xl border border-zinc-200 dark:border-zinc-800 animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-2xl font-bold mb-3 text-zinc-900 dark:text-zinc-100">Réinitialiser ?</h2>
+                        <h2 className="text-2xl font-bold mb-3 text-zinc-900 dark:text-zinc-100">{t.upload.reset_confirm_title}</h2>
                         <p className="text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
-                            Cette action va arrêter l’export en cours et recommencer depuis le début.<br/>
-                            <strong className="text-red-500">Tous les fichiers précédemment téléchargés seront supprimés.</strong>
+                            {t.upload.reset_confirm_desc}<br/>
+                            <strong className="text-red-500">{t.upload.reset_confirm_warning}</strong>
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setOpenRestartModal(false)}
                                 className="flex-1 px-4 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl font-semibold hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                             >
-                                Annuler
+                                {t.upload.cancel}
                             </button>
                             <button
                                 onClick={async () => {
@@ -388,7 +391,7 @@ export default function UploadForm() {
                                 }}
                                 className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20"
                             >
-                                Confirmer
+                                {t.upload.confirm}
                             </button>
                         </div>
                     </div>

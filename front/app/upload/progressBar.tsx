@@ -1,8 +1,10 @@
 import {useEffect} from "react";
 import {useProgress} from "@/app/upload/progressContext";
+import {useLanguage} from "@/app/languageContext";
 
 export default function ProgressBar() {
     const { progress, setProgress, backendUrl } = useProgress();
+    const { t } = useLanguage();
 
     useEffect(() => {
         if (!backendUrl) return;
@@ -30,7 +32,7 @@ export default function ProgressBar() {
             <div className="flex justify-between text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-2 px-1">
                 <span className="flex items-center gap-1.5">
                     {progress.status === 'running' ? '⚡️' : progress.status === 'done' ? '✅' : '💤'} 
-                    {progress.status === 'running' ? 'Téléchargement...' : progress.status === 'done' ? 'Terminé' : 'En attente'}
+                    {progress.status === 'running' ? t.progress.status_running : progress.status === 'done' ? t.progress.status_done : t.progress.status_waiting}
                 </span>
                 <span className="bg-zinc-100 dark:bg-zinc-900 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-800">
                     {progress.downloaded} / {progress.total}
@@ -47,10 +49,10 @@ export default function ProgressBar() {
                 ></div>
             </div>
             <div className="flex justify-between mt-2 px-1">
-                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{percent}% complété</span>
+                <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{percent}{t.progress.completed}</span>
                 {progress.status === "running" && progress.eta && (
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 animate-pulse">
-                        ⏳ Temps restant : {progress.eta}
+                        ⏳ {t.progress.eta} {progress.eta}
                     </span>
                 )}
             </div>

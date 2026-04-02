@@ -7,22 +7,39 @@ import {ProgressProvider} from "@/app/upload/progressContext";
 import BackendHealthGuard from "@/app/backendHealthGuard";
 import { TutorialProvider, useTutorial } from "./tutorialContext";
 
+import { useLanguage } from "./languageContext";
+
 function HomeContent() {
   const { openTutorial } = useTutorial();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <BackendHealthGuard>
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-[#09090b] relative transition-colors duration-300">
         <main className="flex min-h-[90vh] w-full max-w-4xl flex-col items-center justify-between rounded-[2.5rem] py-16 px-8 bg-white dark:bg-zinc-900/40 shadow-[0_0_50px_-12px_rgba(0,0,0,0.1)] relative border border-zinc-100 dark:border-white/5 transition-colors duration-300">
+            <div className="absolute top-8 left-8 flex items-center gap-2">
+              <button 
+                onClick={() => setLanguage('fr')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${language === 'fr' ? 'bg-yellow-400 text-black shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+              >
+                FR 🇫🇷
+              </button>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${language === 'en' ? 'bg-yellow-400 text-black shadow-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
+              >
+                EN 🇺🇸
+              </button>
+            </div>
             <button 
               onClick={openTutorial}
               className="absolute top-8 right-8 flex items-center gap-2 px-5 py-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all text-sm font-semibold text-zinc-700 dark:text-zinc-300 z-10 hover:scale-105 active:scale-95"
             >
-              🎓 Aide & Tutoriel
+              🎓 {t.common.help_tutorial}
             </button>
             <div className={"flex flex-col items-center justify-center w-full lg:w-auto flex-1"}>
                 <h1 className="text-5xl font-black text-zinc-900 dark:text-white tracking-tight mb-2">SnapExporter</h1>
-                <p className="text-zinc-400 font-medium mb-8">Sauvegardez vos souvenirs en toute simplicité</p>
+                <p className="text-zinc-400 font-medium mb-8">{t.common.tagline}</p>
                 <div className="relative group mb-8">
                   <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                   <Image
@@ -42,7 +59,7 @@ function HomeContent() {
 
             <footer className="mt-12 text-zinc-400 text-xs flex flex-col items-center gap-3">
                 <p className="flex items-center gap-1.5 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-full border border-zinc-100 dark:border-zinc-800">
-                    Développé avec ❤️ par <span className="font-bold text-zinc-900 dark:text-zinc-100 underline decoration-yellow-400 decoration-2 underline-offset-4 cursor-pointer hover:text-yellow-600 transition-colors" onClick={() => window.open('https://www.instagram.com/jd_medias', '_blank')}>Judd</span>
+                    {t.common.developed_by} <span className="font-bold text-zinc-900 dark:text-zinc-100 underline decoration-yellow-400 decoration-2 underline-offset-4 cursor-pointer hover:text-yellow-600 transition-colors" onClick={() => window.open('https://www.instagram.com/jd_medias', '_blank')}>Judd</span>
                 </p>
                 <div className="flex gap-6 font-medium">
                     <a 
@@ -58,7 +75,7 @@ function HomeContent() {
                       onClick={(e) => { e.preventDefault(); window.open('https://buymeacoffee.com/judddev', '_blank'); }}
                       className="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors flex items-center gap-1.5"
                     >
-                        ☕ Soutenir le projet
+                        ☕ {t.common.support_project}
                     </a>
                 </div>
             </footer>

@@ -1,0 +1,83 @@
+{
+  "common": {
+    "loading": "Démarrage du système...",
+    "preparing": "Nous préparons votre environnement.",
+    "problem": "Un problème ?",
+    "retry": "Réessayer",
+    "developed_by": "Développé avec ❤️ par",
+    "support_project": "Soutenir le projet",
+    "help_tutorial": "Aide & Tutoriel",
+    "tagline": "Sauvegardez vos souvenirs en toute simplicité"
+  },
+  "tutorial": {
+    "welcome_title": "Bienvenue sur SnapExporter",
+    "welcome_desc": "L'outil simple pour exporter vos souvenirs Snapchat en un clic.",
+    "lets_go": "C'est parti !",
+    "export_data_title": "Exportez vos données Snapchat",
+    "export_data_desc": "Pour utiliser l'application, vous allez devoir demander vos données sur le site de Snapchat.",
+    "request_data_link": "Demander mes données Snapchat",
+    "continue": "Continuer",
+    "step1_title": "1 - Quelles informations je dois exporter ?",
+    "step1_desc": "Vous devez exporter les informations suivantes :",
+    "step1_item1": "Exporter mes souvenirs",
+    "step1_item2": "Exporter des fichiers JSON",
+    "step2_title": "2 - Quelles informations je dois exporter ?",
+    "step2_desc": "Une fois les options sélectionnées, choisissez 'depuis toujours' pour exporter TOUT vos memories.",
+    "understood": "Compris !",
+    "what_next_title": "Et après ?",
+    "what_next_desc": "Une fois l'adresse email renseignée, attendez quelques minutes ⏱️ Vous recevrez un email lorsque l'export sera terminé.",
+    "received_mail_label": "J'ai reçu le mail !",
+    "received_mail_title": "J'ai reçu le mail !",
+    "received_mail_desc": "Super ! Il ne vous reste plus qu'à :",
+    "received_mail_item1": "Télécharger le premier zip fichier généré par Snapchat",
+    "received_mail_item2": "Selectionner ce fichier ZIP sur le boutton 'Archive Snapchat (.zip)'",
+    "finish_config": "Terminer la configuration",
+    "back": "Retour",
+    "close": "Fermer"
+  },
+  "upload": {
+    "show_settings": "➡️ Voir les paramètres de l'export",
+    "hide_settings": "⬇️ Cacher les paramètres",
+    "output_folder": "Dossier de sortie",
+    "change_folder": "Changer le dossier 🔍",
+    "folder_ok": "Dossier ✅",
+    "select_zip": "Archive Snapchat (.zip)",
+    "change_zip": "Autre archive 🔍",
+    "zip_ok": "Archive ✅",
+    "tooltip_folder": "Choisissez l'endroit où vos souvenirs seront téléchargés sur votre ordinateur.",
+    "tooltip_zip": "Sélectionnez l'archive .zip de votre export Snapchat. L'application y cherchera automatiquement le fichier 'memories_history.json'.",
+    "merge_overlays": "Fusionner les Overlays (Texte/Filtres Snapchat)",
+    "tooltip_merge": "Le format par défaut d'export de snapchat sépare les textes des médias. Sélectioner cette option fusionnera les fichiers concernés pour obtenir un seul et même fichier.",
+    "start_download": "Démarrer le téléchargement",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "reset": "Réinitialiser",
+    "reset_confirm_title": "Réinitialiser ?",
+    "reset_confirm_desc": "Cette action va arrêter l’export en cours et recommencer depuis le début.",
+    "reset_confirm_warning": "Tous les fichiers précédemment téléchargés seront supprimés.",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
+  },
+  "history": {
+    "show_history": "➡️ Voir l'historique",
+    "hide_history": "⬇️ Cacher l'historique",
+    "show_errors": "➡️ Voir les fichiers en erreur",
+    "hide_errors": "⬇️ Cacher les fichiers en erreur",
+    "no_history": "Aucun historique pour le moment",
+    "error_explanation": "Ces fichiers n'ont pas pu être téléchargés. Cela peut arriver si le lien a expiré ou si votre connexion a été coupée.",
+    "media": "Média",
+    "date": "Date",
+    "status": "Statut",
+    "error": "Erreur"
+  },
+  "health": {
+    "backend_slow": "Le backend semble mettre du temps à démarrer ou a rencontré une erreur."
+  },
+  "progress": {
+    "status_running": "Téléchargement...",
+    "status_done": "Terminé",
+    "status_waiting": "En attente",
+    "completed": "% complété",
+    "eta": "Temps restant :"
+  }
+}

@@ -20,68 +20,72 @@ interface Step {
   prevLabel?: string;
 }
 
-const steps: Step[] = [
-  {
-    title: "Bienvenue sur SnapExporter",
-    description: "L'outil simple pour exporter vos souvenirs Snapchat en un clic.",
-    image: "/snap-logo.png",
-    nextLabel: "C'est parti !",
-  },
-  {
-    title: "Exportez vos données Snapchat",
-    description: "Pour utiliser l'application, vous allez devoir demander vos données sur le site de Snapchat.",
-    icon: "📂",
-    secondaryImage: "/tutorials/cal_selection.png",
-    links: [
-      { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ],
-    nextLabel: "Continuer",
-  },
-  {
-    title: "1 - Quelles informations je dois exporter ?",
-    description: "Vous devez exporter les informations suivantes :",
-    items: [
-      "Exporter mes souvenirs",
-      "Exporter des fichiers JSON",
-    ],
-    icon: "📋",
-    secondaryImage: "/tutorials/wich_choose.png",
-    links: [
-      { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ],
-    nextLabel: "Continuer",
-  },
-  {
-    title: "2 - Quelles informations je dois exporter ?",
-    description: "Une fois les options sélectionnées, choisissez 'depuis toujours' pour exporter TOUT vos memories.",
-    items: [],
-    icon: "📋",
-    secondaryImage: "/tutorials/cal_selection.png",
-    links: [
-      { label: "Demander mes données Snapchat", url: "https://accounts.snapchat.com/accounts/downloadmydata" }
-    ],
-    nextLabel: "Compris !",
-  },
-  {
-    title: "Et après ?",
-    description: "Une fois l'adresse email renseignée, attendez quelques minutes ⏱️ Vous recevrez un email lorsque l'export sera terminé.",
-    icon: "⏱️",
-    nextLabel: "J'ai reçu le mail !",
-  },
-  {
-    title: "J'ai reçu le mail !",
-    description: "Super ! Il ne vous reste plus qu'à :",
-    items: [
-      "Télécharger le fichier généré par Snapchat",
-      "Selectionner ce fichier ZIP sur le boutton 'Fichier Snapchat (.zip)'"
-    ],
-    icon: "📬",
-    nextLabel: "Terminer la configuration",
-  },
-];
+import { useLanguage } from "./languageContext";
 
 export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
+
+  const steps: Step[] = [
+    {
+      title: t.tutorial.welcome_title,
+      description: t.tutorial.welcome_desc,
+      image: "/snap-logo.png",
+      nextLabel: t.tutorial.lets_go,
+    },
+    {
+      title: t.tutorial.export_data_title,
+      description: t.tutorial.export_data_desc,
+      icon: "📂",
+      secondaryImage: "/tutorials/cal_selection.png",
+      links: [
+        { label: t.tutorial.request_data_link, url: "https://accounts.snapchat.com/accounts/downloadmydata" }
+      ],
+      nextLabel: t.tutorial.continue,
+    },
+    {
+      title: t.tutorial.step1_title,
+      description: t.tutorial.step1_desc,
+      items: [
+        t.tutorial.step1_item1,
+        t.tutorial.step1_item2,
+      ],
+      icon: "📋",
+      secondaryImage: "/tutorials/wich_choose.png",
+      links: [
+        { label: t.tutorial.request_data_link, url: "https://accounts.snapchat.com/accounts/downloadmydata" }
+      ],
+      nextLabel: t.tutorial.continue,
+    },
+    {
+      title: t.tutorial.step2_title,
+      description: t.tutorial.step2_desc,
+      items: [],
+      icon: "📋",
+      secondaryImage: "/tutorials/cal_selection.png",
+      links: [
+        { label: t.tutorial.request_data_link, url: "https://accounts.snapchat.com/accounts/downloadmydata" }
+      ],
+      nextLabel: t.tutorial.understood,
+    },
+    {
+      title: t.tutorial.what_next_title,
+      description: t.tutorial.what_next_desc,
+      icon: "⏱️",
+      nextLabel: t.tutorial.received_mail_label,
+    },
+    {
+      title: t.tutorial.received_mail_title,
+      description: t.tutorial.received_mail_desc,
+      items: [
+        t.tutorial.received_mail_item1,
+        t.tutorial.received_mail_item2
+      ],
+      icon: "📬",
+      secondaryImage: "/tutorials/mydata_to_dl.png",
+      nextLabel: t.tutorial.finish_config,
+    },
+  ];
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   const handleLinkClick = (e: React.MouseEvent, url: string) => {
@@ -143,7 +147,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
         <button 
           onClick={closeTutorial}
           className="absolute top-8 right-8 text-zinc-400 hover:text-black dark:hover:text-white transition-colors p-2 z-10"
-          aria-label="Fermer le tutoriel"
+          aria-label={t.tutorial.close}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -234,7 +238,7 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
                 currentStep === 0 ? "invisible" : "text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
               }`}
             >
-              {step.prevLabel || "Précédent"}
+              {step.prevLabel || t.tutorial.back}
             </button>
 
             <button
@@ -248,8 +252,8 @@ export default function Tutorial({ onComplete, isBackendReady }: TutorialProps) 
               }`}
             >
               {currentStep === steps.length - 1 
-                ? (step.nextLabel || (isBackendReady ? "Commencer" : "Initialisation...")) 
-                : (step.nextLabel || "Suivant")}
+                ? (step.nextLabel || (isBackendReady ? t.tutorial.finish_config : t.common.loading)) 
+                : (step.nextLabel || t.tutorial.continue)}
             </button>
           </div>
         </div>

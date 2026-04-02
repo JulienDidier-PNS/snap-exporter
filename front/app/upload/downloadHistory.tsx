@@ -16,7 +16,10 @@ export interface DownloadsPageDTO {
     limit: number;
 }
 
+import { useLanguage } from "../languageContext";
+
 export default function DownloadHistory() {
+    const { t } = useLanguage();
     const { progress, backendUrl } = useProgress();
 
     const [downloadedItems, setDownloadedItems] = useState<DownloadedItemDTO[]>([]);
@@ -100,7 +103,7 @@ export default function DownloadHistory() {
                             onClick={() => setOpenHisto(!openHisto)}
                             className="mb-2 font-bold text-sm flex items-center gap-2 px-4 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors w-fit"
                         >
-                            {openHisto ? "⬇️ Cacher l'historique" : "➡️ Voir l'historique"}
+                            {openHisto ? t.history.hide_history : t.history.show_history}
                         </button>
 
                         <div
@@ -115,7 +118,7 @@ export default function DownloadHistory() {
                                 <ul className="text-sm histo-list">
                                     {downloadedItems.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 gap-2 italic py-10">
-                                            <p>Aucun fichier téléchargé pour le moment.</p>
+                                            <p>{t.history.no_history}</p>
                                         </div>
                                     ) : (
                                         downloadedItems.map((item, i) => (
@@ -172,7 +175,7 @@ export default function DownloadHistory() {
                             onClick={() => setOpenErrorFiles(!openErrorFiles)}
                             className="mb-2 font-bold text-sm flex items-center gap-2 px-4 py-2 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors w-fit text-red-600 dark:text-red-400"
                         >
-                            {openErrorFiles ? "⬇️ Cacher" : "➡️ Voir les fichiers en erreur"}
+                            {openErrorFiles ? t.history.hide_errors : t.history.show_errors}
                         </button>
                         <div
                             ref={contentRefErrorFiles}
@@ -184,7 +187,7 @@ export default function DownloadHistory() {
                         >
                             <div className="files-error-list">
                                 {Object.keys(errorFiles).length === 0 ? (
-                                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic text-center py-4">Aucune erreur détectée.</p>
+                                    <p className="text-sm text-zinc-400 dark:text-zinc-500 italic text-center py-4">{t.history.no_history}</p>
                                 ) : (
                                     <ul className="text-xs space-y-2">
                                         {Object.entries(errorFiles).map(([filename, reason], i) => (
